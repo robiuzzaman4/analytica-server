@@ -8,10 +8,7 @@
   "scripts": {
     "build": "nest build",
     "docker:up": "docker compose up --build",
-    "docker:up:db": "docker compose up -d postgres",
     "docker:down": "docker compose down",
-    "db:up": "docker compose up -d postgres",
-    "db:down": "docker compose down",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "prisma:generate": "prisma generate --schema prisma/schema.prisma",
     "prisma:validate": "prisma validate --schema prisma/schema.prisma",

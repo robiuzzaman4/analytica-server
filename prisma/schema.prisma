@@ -5,3 +5,72 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+enum Role {
+  ADMIN
+  USER
+}
+
+enum TaskStatus {
+  PENDING
+  PROCESSING
+  DONE
+}
+
+enum AuditActionType {
+  TASK_CREATED
+  TASK_UPDATED
+  TASK_DELETED
+  TASK_ASSIGNED
+  TASK_STATUS_CHANGED
+}
+
+model User {
+  id            String     @id @default(cuid())
+  name          String
+  email         String     @unique
+  password      String
+  role          Role
+  assignedTasks Task[]
+  auditLogs     AuditLog[]
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  @@index([role])
+  @@map("users")
+}
+
+model Task {
+  id             String     @id @default(cuid())
+  title          String
+  description    String
+  status         TaskStatus @default(PENDING)
+  assignedUserId String?
+  assignedUser   User?      @relation(fields: [assignedUserId], references: [id], onDelete: SetNull)
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  @@index([assignedUserId])
+  @@index([status])
+  @@index([assignedUserId, status])
+  @@map("tasks")
+}
+
+model AuditLog {
+  id             String          @id @default(cuid())
+  actorUserId    String
+  actorUser      User            @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
+  actionType     AuditActionType
+  targetEntity   String
+  targetEntityId String
+  summary        String
+  beforeData     Json?
+  afterData      Json?
+  createdAt      DateTime        @default(now())
+
+  @@index([actorUserId])
+  @@index([actionType])
+  @@index([targetEntity, targetEntityId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
