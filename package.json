@@ -10,6 +10,7 @@
     "docker:up": "docker compose up --build",
     "docker:down": "docker compose down",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
+    "db:seed": "prisma db seed",
     "prisma:generate": "prisma generate --schema prisma/schema.prisma",
     "prisma:validate": "prisma validate --schema prisma/schema.prisma",
     "start": "nest start",
@@ -23,11 +24,15 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
+  "prisma": {
+    "seed": "node prisma/seed.js"
+  },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.3",
     "@nestjs/core": "^11.0.1",
     "@nestjs/platform-express": "^11.0.1",
+    "@prisma/adapter-pg": "^7.6.0",
     "@prisma/client": "^7.6.0",
     "pg": "^8.20.0",
     "reflect-metadata": "^0.2.2",

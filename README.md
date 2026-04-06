@@ -2,28 +2,23 @@
 
 NestJS backend for the task management system described in `doc.md`.
 
-## Step 1 Status
+## Current Progress
 
-Step 1 is focused on infrastructure only:
-
-- NestJS app scaffold
-- PostgreSQL via Docker Compose
-- backend app container via Docker Compose
-- Prisma initialization
-- environment variable setup
-
-Domain models, authentication, RBAC, tasks, and audit logging are intentionally deferred to later steps in `spec.md`.
+- Step 1: infrastructure setup completed
+- Step 2: Prisma schema and initial migration added
+- Step 3: local seed support for demo users added
 
 ## Requirements
 
 - Node.js 20+
 - pnpm
-- Docker Desktop
+- local PostgreSQL
 
 ## Environment Setup
 
 1. Copy `.env.example` to `.env`
-2. Keep the default `DATABASE_URL` unless you want a different local database name or password
+2. Create a local PostgreSQL database named `analytica_task_management_db`
+3. Update DB credentials in `.env` if your local PostgreSQL uses different ones
 
 Example:
 
@@ -37,46 +32,19 @@ If you are on Windows PowerShell:
 Copy-Item .env.example .env
 ```
 
-## Run With Docker Compose
+## Local Database
 
-To run both the database and backend app:
+The local development database is expected to be:
 
-```bash
-pnpm run docker:up
-```
-
-This starts:
-
-- PostgreSQL on `localhost:5432`
-- NestJS backend on `localhost:3000`
-
-To stop everything:
-
-```bash
-pnpm run docker:down
-```
-
-## Start PostgreSQL Only
-
-```bash
-pnpm run docker:up:db
-```
-
-This starts PostgreSQL on `localhost:5432` with:
-
-- database: `analytica_management`
+- database: `analytica_task_management_db`
 - user: `postgres`
-- password: `postgres`
+- password: `123456`
 
-To stop it:
-
-```bash
-pnpm run db:down
-```
+If your local PostgreSQL credentials differ, update `DATABASE_URL` in `.env`.
 
 ## Prisma Commands
 
-Validate the Prisma setup:
+Validate the Prisma schema:
 
 ```bash
 pnpm run prisma:validate
@@ -87,6 +55,30 @@ Generate the Prisma client:
 ```bash
 pnpm run prisma:generate
 ```
+
+Run the Prisma seed:
+
+```bash
+pnpm run db:seed
+```
+
+## Demo Credentials
+
+The seed uses values from `.env`:
+
+- `DEMO_ADMIN_NAME`
+- `DEMO_ADMIN_EMAIL`
+- `DEMO_ADMIN_PASSWORD`
+- `DEMO_USER_NAME`
+- `DEMO_USER_EMAIL`
+- `DEMO_USER_PASSWORD`
+
+Default local demo accounts:
+
+- admin: `admin@analytica.local` / `Admin123!`
+- user: `user@analytica.local` / `User123!`
+
+Passwords are hashed before being stored in the database.
 
 ## Run The App
 
@@ -101,11 +93,3 @@ Start the backend in development mode:
 ```bash
 pnpm run start:dev
 ```
-
-The app listens on the port from `PORT`, defaulting to `3000`.
-
-## Current Database Scope
-
-`prisma/schema.prisma` currently includes only the Prisma generator and PostgreSQL datasource.
-
-The full schema for users, tasks, roles, statuses, and audit logs belongs to Step 2.
