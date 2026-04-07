@@ -39,7 +39,18 @@ Some endpoints are restricted by role. The role is included in the login respons
 
 ## Common Notes
 
-- Success responses are JSON.
+- All API responses use a shared envelope:
+
+```json
+{
+  "success": true,
+  "message": "Request successful",
+  "data": {},
+  "statusCode": 200
+}
+```
+
+- On errors, `success` is `false` and `data` is `null`.
 - Validation errors return `400 Bad Request`.
 - Invalid login returns `401 Unauthorized`.
 - Missing or invalid token returns `401 Unauthorized`.
@@ -56,7 +67,12 @@ Response:
 
 ```json
 {
-  "status": "ok"
+  "success": true,
+  "message": "Health check retrieved successfully",
+  "data": {
+    "status": "ok"
+  },
+  "statusCode": 200
 }
 ```
 
@@ -79,13 +95,18 @@ Response:
 
 ```json
 {
-  "accessToken": "<jwt-token>",
-  "user": {
-    "id": "cm...",
-    "name": "Admin User",
-    "email": "admin@example.com",
-    "role": "ADMIN"
-  }
+  "success": true,
+  "message": "Login successful",
+  "data": {
+    "accessToken": "<jwt-token>",
+    "user": {
+      "id": "cm...",
+      "name": "Admin User",
+      "email": "admin@example.com",
+      "role": "ADMIN"
+    }
+  },
+  "statusCode": 201
 }
 ```
 
@@ -101,10 +122,15 @@ Response:
 
 ```json
 {
-  "id": "cm...",
-  "name": "Admin User",
-  "email": "admin@example.com",
-  "role": "ADMIN"
+  "success": true,
+  "message": "Authenticated user retrieved successfully",
+  "data": {
+    "id": "cm...",
+    "name": "Admin User",
+    "email": "admin@example.com",
+    "role": "ADMIN"
+  },
+  "statusCode": 200
 }
 ```
 
@@ -127,7 +153,10 @@ Response:
 
 ```json
 {
-  "message": "Logged out successfully"
+  "success": true,
+  "message": "Logged out successfully",
+  "data": null,
+  "statusCode": 201
 }
 ```
 

@@ -34,9 +34,12 @@ describe('AuditLogsController', () => {
 
     auditLogsService.findAll.mockResolvedValue([{ id: 'audit_1' }]);
 
-    await expect(auditLogsController.findAll(query)).resolves.toEqual([
-      { id: 'audit_1' },
-    ]);
+    await expect(auditLogsController.findAll(query)).resolves.toEqual({
+      statusCode: 200,
+      success: true,
+      message: 'Get Audit Logs Successfully.',
+      data: [{ id: 'audit_1' }],
+    });
 
     expect(auditLogsService.findAll).toHaveBeenCalledWith(query);
   });

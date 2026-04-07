@@ -1,4 +1,3 @@
-import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import {
   ensureDemoUsersSeeded,
@@ -7,30 +6,14 @@ import {
 import { PrismaService } from './common/prisma/prisma.service';
 import { AppModule } from './app.module';
 import { ConfigService } from '@nestjs/config';
+import { configureApp } from './app.setup';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  configureApp(app);
   const configService = app.get(ConfigService);
   const port = configService.get<number>('PORT') || 5000;
   const prismaService = app.get(PrismaService);
-
-  app.setGlobalPrefix('api/v1');
-
-  app.enableCors({
-    origin: true,
-    credentials: true,
-  });
-
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      transform: true,
-      transformOptions: {
-        enableImplicitConversion: true,
-      },
-      forbidNonWhitelisted: true,
-    }),
-  );
 
   const demoUserConfig = getDemoUserSeedConfig(process.env);
 

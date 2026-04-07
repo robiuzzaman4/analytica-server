@@ -5,6 +5,7 @@ NestJS backend for a small task management system with JWT auth, role-based acce
 ## Features
 
 - JWT login with predefined demo users
+- Common API response envelope for success and error responses
 - 2 roles: `ADMIN` and `USER`
 - Admin task CRUD
 - User-only assigned task views
@@ -25,6 +26,19 @@ NestJS backend for a small task management system with JWT auth, role-based acce
 - Bcrypt
 
 ## Implemented API
+
+All HTTP responses are wrapped in this format:
+
+```ts
+interface ApiResponse<T> {
+  success: boolean;
+  message: string;
+  data: T | null;
+  statusCode: number;
+}
+```
+
+For error responses, `success` is `false` and `data` is `null`.
 
 ### Auth
 

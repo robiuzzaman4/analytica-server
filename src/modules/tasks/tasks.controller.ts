@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  HttpStatus,
   Param,
   Patch,
   Post,
@@ -13,6 +14,7 @@ import { CurrentUser } from '../../common/auth/decorators/current-user.decorator
 import { Roles } from '../../common/auth/decorators/roles.decorator';
 import { RolesGuard } from '../../common/auth/guards/roles.guard';
 import { AuthenticatedUser } from '../../common/auth/interfaces/authenticated-user.interface';
+import { sendResponse } from '../../common/http/send-response';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskStatusDto } from './dto/update-task-status.dto';
@@ -26,77 +28,133 @@ export class TasksController {
   @Roles(Role.ADMIN)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Post()
-  create(
+  async create(
     @CurrentUser() user: AuthenticatedUser | undefined,
     @Body() createTaskDto: CreateTaskDto,
   ) {
-    return this.tasksService.create(user!.id, createTaskDto);
+    const result = await this.tasksService.create(user!.id, createTaskDto);
+
+    return sendResponse({
+      statusCode: HttpStatus.CREATED,
+      success: true,
+      message: 'Create Task Successfully.',
+      data: result,
+    });
   }
 
   @Roles(Role.ADMIN)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get()
-  findAll() {
-    return this.tasksService.findAll();
+  async findAll() {
+    const result = await this.tasksService.findAll();
+
+    return sendResponse({
+      statusCode: HttpStatus.OK,
+      success: true,
+      message: 'Get All Tasks Successfully.',
+      data: result,
+    });
   }
 
   @Roles(Role.USER)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('me')
-  findMyTasks(@CurrentUser() user: AuthenticatedUser | undefined) {
-    return this.tasksService.findAssignedTasks(user!.id);
+  async findMyTasks(@CurrentUser() user: AuthenticatedUser | undefined) {
+    const result = await this.tasksService.findAssignedTasks(user!.id);
+
+    return sendResponse({
+      statusCode: HttpStatus.OK,
+      success: true,
+      message: 'Get My Tasks Successfully.',
+      data: result,
+    });
   }
 
   @Roles(Role.USER)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('me/:id')
-  findMyTaskById(
+  async findMyTaskById(
     @CurrentUser() user: AuthenticatedUser | undefined,
     @Param('id') id: string,
   ) {
-    return this.tasksService.findAssignedTaskById(user!.id, id);
+    const result = await this.tasksService.findAssignedTaskById(user!.id, id);
+
+    return sendResponse({
+      statusCode: HttpStatus.OK,
+      success: true,
+      message: 'Get My Task Successfully.',
+      data: result,
+    });
   }
 
   @Roles(Role.USER)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Patch(':id/status')
-  updateMyTaskStatus(
+  async updateMyTaskStatus(
     @CurrentUser() user: AuthenticatedUser | undefined,
     @Param('id') id: string,
     @Body() updateTaskStatusDto: UpdateTaskStatusDto,
   ) {
-    return this.tasksService.updateAssignedTaskStatus(
+    const result = await this.tasksService.updateAssignedTaskStatus(
       user!.id,
       id,
       updateTaskStatusDto,
     );
+
+    return sendResponse({
+      statusCode: HttpStatus.OK,
+      success: true,
+      message: 'Update Task Status Successfully.',
+      data: result,
+    });
   }
 
   @Roles(Role.ADMIN)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.tasksService.findOne(id);
+  async findOne(@Param('id') id: string) {
+    const result = await this.tasksService.findOne(id);
+
+    return sendResponse({
+      statusCode: HttpStatus.OK,
+      success: true,
+      message: 'Get Task Successfully.',
+      data: result,
+    });
   }
 
   @Roles(Role.ADMIN)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Patch(':id')
-  update(
+  async update(
     @CurrentUser() user: AuthenticatedUser | undefined,
     @Param('id') id: string,
     @Body() updateTaskDto: UpdateTaskDto,
   ) {
-    return this.tasksService.update(user!.id, id, updateTaskDto);
+    const result = await this.tasksService.update(user!.id, id, updateTaskDto);
+
+    return sendResponse({
+      statusCode: HttpStatus.OK,
+      success: true,
+      message: 'Update Task Successfully.',
+      data: result,
+    });
   }
 
   @Roles(Role.ADMIN)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Delete(':id')
-  remove(
+  async remove(
     @CurrentUser() user: AuthenticatedUser | undefined,
     @Param('id') id: string,
   ) {
-    return this.tasksService.remove(user!.id, id);
+    const result = await this.tasksService.remove(user!.id, id);
+
+    return sendResponse({
+      statusCode: HttpStatus.OK,
+      success: true,
+      message: 'Delete Task Successfully.',
+      data: result,
+    });
   }
 }

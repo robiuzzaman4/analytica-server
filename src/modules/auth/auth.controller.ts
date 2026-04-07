@@ -1,7 +1,17 @@
-import { Body, Controller, Get, Post, Res, UseGuards } from '@nestjs/common';
-import type { Response } from 'express';
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+import {
+  Body,
+  Controller,
+  Get,
+  HttpStatus,
+  Post,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
 import { CurrentUser } from '../../common/auth/decorators/current-user.decorator';
 import { AuthenticatedUser } from '../../common/auth/interfaces/authenticated-user.interface';
+import { sendResponse } from '../../common/http/send-response';
 import { LoginDto } from './dto/login.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { AuthService } from './auth.service';
@@ -13,7 +23,7 @@ export class AuthController {
   @Post('login')
   async login(
     @Body() loginDto: LoginDto,
-    @Res({ passthrough: true }) response: Response,
+    @Res({ passthrough: true }) response,
   ) {
     const result = await this.authService.login(
       loginDto.email,
@@ -28,18 +38,28 @@ export class AuthController {
       path: '/',
     });
 
-    return result;
+    return sendResponse({
+      statusCode: HttpStatus.OK,
+      success: true,
+      message: 'Login Successfully.',
+      data: result,
+    });
   }
 
   @UseGuards(JwtAuthGuard)
   @Get('me')
   me(@CurrentUser() user: AuthenticatedUser | undefined) {
-    return user;
+    return sendResponse({
+      statusCode: HttpStatus.OK,
+      success: true,
+      message: 'Get Profile Successfully.',
+      data: user ?? null,
+    });
   }
 
   @UseGuards(JwtAuthGuard)
   @Post('logout')
-  logout(@Res({ passthrough: true }) response: Response) {
+  logout(@Res({ passthrough: true }) response) {
     response.clearCookie('accessToken', {
       httpOnly: true,
       sameSite: 'lax',
@@ -47,6 +67,13 @@ export class AuthController {
       path: '/',
     });
 
-    return this.authService.logout();
+    const result = this.authService.logout();
+
+    return sendResponse({
+      statusCode: HttpStatus.OK,
+      success: true,
+      message: 'Logout Successfully.',
+      data: result,
+    });
   }
 }

@@ -63,9 +63,13 @@ describe('TasksController', () => {
 
     tasksService.create.mockResolvedValue({ id: 'task_1', ...createTaskDto });
 
-    await expect(tasksController.create(user, createTaskDto)).resolves.toEqual({
-      id: 'task_1',
-      ...createTaskDto,
+    await expect(
+      tasksController.create(user, createTaskDto),
+    ).resolves.toEqual({
+      statusCode: 201,
+      success: true,
+      message: 'Create Task Successfully.',
+      data: { id: 'task_1', ...createTaskDto },
     });
 
     expect(tasksService.create).toHaveBeenCalledWith('admin_1', createTaskDto);
@@ -74,9 +78,12 @@ describe('TasksController', () => {
   it('delegates listing to the service', async () => {
     tasksService.findAll.mockResolvedValue([{ id: 'task_1' }]);
 
-    await expect(tasksController.findAll()).resolves.toEqual([
-      { id: 'task_1' },
-    ]);
+    await expect(tasksController.findAll()).resolves.toEqual({
+      statusCode: 200,
+      success: true,
+      message: 'Get All Tasks Successfully.',
+      data: [{ id: 'task_1' }],
+    });
     expect(tasksService.findAll).toHaveBeenCalled();
   });
 
@@ -100,9 +107,12 @@ describe('TasksController', () => {
 
     tasksService.findAssignedTasks.mockResolvedValue([{ id: 'task_1' }]);
 
-    await expect(tasksController.findMyTasks(user)).resolves.toEqual([
-      { id: 'task_1' },
-    ]);
+    await expect(tasksController.findMyTasks(user)).resolves.toEqual({
+      statusCode: 200,
+      success: true,
+      message: 'Get My Tasks Successfully.',
+      data: [{ id: 'task_1' }],
+    });
 
     expect(tasksService.findAssignedTasks).toHaveBeenCalledWith('user_1');
   });
@@ -119,7 +129,10 @@ describe('TasksController', () => {
     await expect(
       tasksController.findMyTaskById(user, 'task_1'),
     ).resolves.toEqual({
-      id: 'task_1',
+      statusCode: 200,
+      success: true,
+      message: 'Get My Task Successfully.',
+      data: { id: 'task_1' },
     });
 
     expect(tasksService.findAssignedTaskById).toHaveBeenCalledWith(
@@ -157,8 +170,13 @@ describe('TasksController', () => {
     await expect(
       tasksController.updateMyTaskStatus(user, 'task_1', updateTaskStatusDto),
     ).resolves.toEqual({
-      id: 'task_1',
-      ...updateTaskStatusDto,
+      statusCode: 200,
+      success: true,
+      message: 'Update Task Status Successfully.',
+      data: {
+        id: 'task_1',
+        ...updateTaskStatusDto,
+      },
     });
 
     expect(tasksService.updateAssignedTaskStatus).toHaveBeenCalledWith(
@@ -172,7 +190,10 @@ describe('TasksController', () => {
     tasksService.findOne.mockResolvedValue({ id: 'task_1' });
 
     await expect(tasksController.findOne('task_1')).resolves.toEqual({
-      id: 'task_1',
+      statusCode: 200,
+      success: true,
+      message: 'Get Task Successfully.',
+      data: { id: 'task_1' },
     });
 
     expect(tasksService.findOne).toHaveBeenCalledWith('task_1');
@@ -196,8 +217,13 @@ describe('TasksController', () => {
     await expect(
       tasksController.update(user, 'task_1', updateTaskDto),
     ).resolves.toEqual({
-      id: 'task_1',
-      ...updateTaskDto,
+      statusCode: 200,
+      success: true,
+      message: 'Update Task Successfully.',
+      data: {
+        id: 'task_1',
+        ...updateTaskDto,
+      },
     });
 
     expect(tasksService.update).toHaveBeenCalledWith(
@@ -216,8 +242,13 @@ describe('TasksController', () => {
 
     tasksService.remove.mockResolvedValue({ id: 'task_1' });
 
-    await expect(tasksController.remove(user, 'task_1')).resolves.toEqual({
-      id: 'task_1',
+    await expect(
+      tasksController.remove(user, 'task_1'),
+    ).resolves.toEqual({
+      statusCode: 200,
+      success: true,
+      message: 'Delete Task Successfully.',
+      data: { id: 'task_1' },
     });
 
     expect(tasksService.remove).toHaveBeenCalledWith('admin_1', 'task_1');

@@ -43,9 +43,7 @@ export class AuthService {
   }
 
   logout() {
-    return {
-      message: 'Logged out successfully',
-    };
+    return null;
   }
 
   private isPasswordValid(password: string, storedPassword: string) {

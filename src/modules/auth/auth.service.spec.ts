@@ -85,8 +85,6 @@ describe('AuthService', () => {
   });
 
   it('returns a success message for logout', () => {
-    expect(authService.logout()).toEqual({
-      message: 'Logged out successfully',
-    });
+    expect(authService.logout()).toBeNull();
   });
 });

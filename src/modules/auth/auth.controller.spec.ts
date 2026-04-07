@@ -1,5 +1,4 @@
 import { Role } from '@prisma/client';
-import type { Response } from 'express';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 
@@ -11,9 +10,7 @@ describe('AuthController', () => {
   beforeEach(() => {
     authService = {
       login: jest.fn(),
-      logout: jest.fn().mockReturnValue({
-        message: 'Logged out successfully',
-      }),
+      logout: jest.fn().mockReturnValue(null),
     };
     response = {
       cookie: jest.fn(),
@@ -40,15 +37,20 @@ describe('AuthController', () => {
           email: 'admin@analytica.local',
           password: 'Admin123!',
         },
-        response as unknown as Response,
+        response as never,
       ),
     ).resolves.toEqual({
-      accessToken: 'signed-jwt-token',
-      user: {
-        id: 'user_1',
-        name: 'Admin User',
-        email: 'admin@analytica.local',
-        role: Role.ADMIN,
+      statusCode: 200,
+      success: true,
+      message: 'Login Successfully.',
+      data: {
+        accessToken: 'signed-jwt-token',
+        user: {
+          id: 'user_1',
+          name: 'Admin User',
+          email: 'admin@analytica.local',
+          role: Role.ADMIN,
+        },
       },
     });
 
@@ -75,12 +77,20 @@ describe('AuthController', () => {
       role: Role.ADMIN,
     };
 
-    expect(authController.me(user)).toEqual(user);
+    expect(authController.me(user)).toEqual({
+      statusCode: 200,
+      success: true,
+      message: 'Get Profile Successfully.',
+      data: user,
+    });
   });
 
   it('clears the auth cookie and delegates logout to the auth service', () => {
-    expect(authController.logout(response as unknown as Response)).toEqual({
-      message: 'Logged out successfully',
+    expect(authController.logout(response as never)).toEqual({
+      statusCode: 200,
+      success: true,
+      message: 'Logout Successfully.',
+      data: null,
     });
 
     expect(response.clearCookie).toHaveBeenCalledWith(

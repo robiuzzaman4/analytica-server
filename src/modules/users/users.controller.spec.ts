@@ -28,9 +28,12 @@ describe('UsersController', () => {
   it('returns all users', async () => {
     usersService.findAll.mockResolvedValue([{ id: 'user_1' }]);
 
-    await expect(usersController.findAll()).resolves.toEqual([
-      { id: 'user_1' },
-    ]);
+    await expect(usersController.findAll()).resolves.toEqual({
+      statusCode: 200,
+      success: true,
+      message: 'Get All Users Successfully.',
+      data: [{ id: 'user_1' }],
+    });
 
     expect(usersService.findAll).toHaveBeenCalled();
   });
