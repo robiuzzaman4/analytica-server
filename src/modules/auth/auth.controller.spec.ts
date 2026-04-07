@@ -1,14 +1,19 @@
 import { Role } from '@prisma/client';
+import type { Response } from 'express';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 
 describe('AuthController', () => {
   let authController: AuthController;
   let authService: { login: jest.Mock };
+  let response: { cookie: jest.Mock };
 
   beforeEach(() => {
     authService = {
       login: jest.fn(),
+    };
+    response = {
+      cookie: jest.fn(),
     };
 
     authController = new AuthController(authService as unknown as AuthService);
@@ -26,10 +31,13 @@ describe('AuthController', () => {
     });
 
     await expect(
-      authController.login({
-        email: 'admin@analytica.local',
-        password: 'Admin123!',
-      }),
+      authController.login(
+        {
+          email: 'admin@analytica.local',
+          password: 'Admin123!',
+        },
+        response as unknown as Response,
+      ),
     ).resolves.toEqual({
       accessToken: 'signed-jwt-token',
       user: {
@@ -44,11 +52,21 @@ describe('AuthController', () => {
       'admin@analytica.local',
       'Admin123!',
     );
+    expect(response.cookie).toHaveBeenCalledWith(
+      'accessToken',
+      'signed-jwt-token',
+      expect.objectContaining({
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+      }),
+    );
   });
 
   it('returns the authenticated user for the me endpoint', () => {
     const user = {
       id: 'user_1',
+      name: 'Admin User',
       email: 'admin@analytica.local',
       role: Role.ADMIN,
     };

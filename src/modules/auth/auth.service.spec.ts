@@ -56,6 +56,7 @@ describe('AuthService', () => {
 
     expect(jwtService.signAsync).toHaveBeenCalledWith({
       sub: user.id,
+      name: user.name,
       email: user.email,
       role: user.role,
     });

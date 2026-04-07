@@ -102,14 +102,18 @@ Response:
 ```json
 {
   "id": "cm...",
+  "name": "Admin User",
   "email": "admin@example.com",
   "role": "ADMIN"
 }
 ```
 
-Note:
+Cookie behavior:
 
-- This response does not currently include `name`.
+- Successful login also sets an `httpOnly` cookie named `accessToken`
+- The backend accepts JWTs from either:
+  - `Authorization: Bearer <token>`
+  - browser cookie `accessToken`
 
 ## Tasks
 
