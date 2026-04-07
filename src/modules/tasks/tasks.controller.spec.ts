@@ -57,15 +57,14 @@ describe('TasksController', () => {
     };
     const user: AuthenticatedUser = {
       id: 'admin_1',
+      name: 'Admin User',
       email: 'admin@analytica.local',
       role: Role.ADMIN,
     };
 
     tasksService.create.mockResolvedValue({ id: 'task_1', ...createTaskDto });
 
-    await expect(
-      tasksController.create(user, createTaskDto),
-    ).resolves.toEqual({
+    await expect(tasksController.create(user, createTaskDto)).resolves.toEqual({
       statusCode: 201,
       success: true,
       message: 'Create Task Successfully.',
@@ -101,6 +100,7 @@ describe('TasksController', () => {
   it('returns tasks assigned to the authenticated user', async () => {
     const user: AuthenticatedUser = {
       id: 'user_1',
+      name: 'Normal User',
       email: 'user@analytica.local',
       role: Role.USER,
     };
@@ -120,6 +120,7 @@ describe('TasksController', () => {
   it('returns a single assigned task for the authenticated user', async () => {
     const user: AuthenticatedUser = {
       id: 'user_1',
+      name: 'Normal User',
       email: 'user@analytica.local',
       role: Role.USER,
     };
@@ -155,6 +156,7 @@ describe('TasksController', () => {
   it('updates only the status of an authenticated user task', async () => {
     const user: AuthenticatedUser = {
       id: 'user_1',
+      name: 'Normal User',
       email: 'user@analytica.local',
       role: Role.USER,
     };
@@ -205,6 +207,7 @@ describe('TasksController', () => {
     };
     const user: AuthenticatedUser = {
       id: 'admin_1',
+      name: 'Admin User',
       email: 'admin@analytica.local',
       role: Role.ADMIN,
     };
@@ -236,15 +239,14 @@ describe('TasksController', () => {
   it('delegates deletion to the service', async () => {
     const user: AuthenticatedUser = {
       id: 'admin_1',
+      name: 'Admin User',
       email: 'admin@analytica.local',
       role: Role.ADMIN,
     };
 
     tasksService.remove.mockResolvedValue({ id: 'task_1' });
 
-    await expect(
-      tasksController.remove(user, 'task_1'),
-    ).resolves.toEqual({
+    await expect(tasksController.remove(user, 'task_1')).resolves.toEqual({
       statusCode: 200,
       success: true,
       message: 'Delete Task Successfully.',

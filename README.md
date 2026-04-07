@@ -246,6 +246,12 @@ Run unit tests:
 pnpm test
 ```
 
+Run e2e tests:
+
+```bash
+pnpm run test:e2e
+```
+
 Run lint:
 
 ```bash

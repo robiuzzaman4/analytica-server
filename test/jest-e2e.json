@@ -1,9 +1,17 @@
 {
   "moduleFileExtensions": ["js", "json", "ts"],
   "rootDir": ".",
-  "testEnvironment": "node",
+  "testEnvironment": "<rootDir>/../node_modules/.pnpm/jest-environment-node@30.3.0/node_modules/jest-environment-node/build/index.js",
   "testRegex": ".e2e-spec.ts$",
   "transform": {
-    "^.+\\.(t|j)s$": "ts-jest"
+    "^.+\\.(t|j)s$": [
+      "ts-jest",
+      {
+        "tsconfig": "tsconfig.spec.json"
+      }
+    ]
+  },
+  "moduleNameMapper": {
+    "^bcrypt$": "<rootDir>/support/bcrypt.mock.ts"
   }
 }
