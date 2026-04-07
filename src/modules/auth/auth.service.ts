@@ -1,4 +1,4 @@
-import { scryptSync, timingSafeEqual } from 'node:crypto';
+import { compare } from 'bcrypt';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../../common/prisma/prisma.service';
@@ -16,7 +16,11 @@ export class AuthService {
       where: { email },
     });
 
-    if (!user || !this.isPasswordValid(password, user.password)) {
+    const isPasswordValid = user
+      ? await this.isPasswordValid(password, user.password)
+      : false;
+
+    if (!user || !isPasswordValid) {
       throw new UnauthorizedException('Invalid email or password');
     }
 
@@ -37,18 +41,7 @@ export class AuthService {
     };
   }
 
-  private isPasswordValid(password: string, storedPassword: string): boolean {
-    const [salt, expectedHash] = storedPassword.split(':');
-
-    if (!salt || !expectedHash) {
-      return false;
-    }
-
-    const derivedHash = scryptSync(password, salt, 64).toString('hex');
-
-    return timingSafeEqual(
-      Buffer.from(expectedHash, 'hex'),
-      Buffer.from(derivedHash, 'hex'),
-    );
+  private isPasswordValid(password: string, storedPassword: string) {
+    return compare(password, storedPassword);
   }
 }

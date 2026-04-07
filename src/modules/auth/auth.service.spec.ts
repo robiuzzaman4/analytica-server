@@ -1,14 +1,12 @@
-import { randomBytes, scryptSync } from 'node:crypto';
+import { hash } from 'bcrypt';
 import { UnauthorizedException } from '@nestjs/common';
 import { Role } from '@prisma/client';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { AuthService } from './auth.service';
 
-function hashPassword(password: string): string {
-  const salt = randomBytes(16).toString('hex');
-  const hash = scryptSync(password, salt, 64).toString('hex');
-  return `${salt}:${hash}`;
+async function hashPassword(password: string): Promise<string> {
+  return hash(password, 10);
 }
 
 describe('AuthService', () => {
@@ -38,7 +36,7 @@ describe('AuthService', () => {
       id: 'user_1',
       name: 'Admin User',
       email: 'admin@analytica.local',
-      password: hashPassword('Admin123!'),
+      password: await hashPassword('Admin123!'),
       role: Role.ADMIN,
     };
 
@@ -76,7 +74,7 @@ describe('AuthService', () => {
       id: 'user_1',
       name: 'Admin User',
       email: 'admin@analytica.local',
-      password: hashPassword('Admin123!'),
+      password: await hashPassword('Admin123!'),
       role: Role.ADMIN,
     });
 
