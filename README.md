@@ -157,14 +157,14 @@ docker compose up --build
 This starts:
 
 - PostgreSQL on `localhost:5432`
-- the NestJS app on `localhost:3000`
+- the NestJS app on `localhost:5000`
 
 The compose setup now:
 
 - uses values from `.env` / `.env.example` instead of hardcoded DB credentials
-- builds a slimmer production-style app image
+- builds a simple production-style app image
 - points the app container to the `postgres` service automatically
-- runs `prisma migrate deploy` in a separate migration service before starting the app
+- runs `prisma migrate deploy` before starting the app container
 
 Useful env values for Docker:
 
@@ -179,11 +179,18 @@ For Docker Compose, the app container internally uses the `postgres` hostname au
 
 ## Production Notes
 
-The `Dockerfile` now uses a multi-stage build:
+The `Dockerfile` now uses a simple two-stage build:
 
-- `builder` installs dependencies, generates Prisma client, and builds the app
-- `prod-deps` prunes dev dependencies before the final image is created
-- `production` copies the built output and production dependencies only, then starts `node dist/main`
+- `builder` installs dependencies, generates Prisma client, builds the app, and prunes dev dependencies
+- `production` copies the built output and production dependencies, then starts `node dist/main`
+
+For Docker-based deployment, the container startup command should run:
+
+```bash
+pnpm exec prisma migrate deploy && node dist/main.js
+```
+
+That keeps one image usable for both Docker Compose development and production deployment.
 
 For production deployment, provide these env vars at minimum:
 

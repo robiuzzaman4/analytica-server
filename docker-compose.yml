@@ -1,6 +1,7 @@
 services:
-  postgres:
+  analytica-db:
     image: postgres:16-alpine
+    container_name: analytica-db
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-analytica_task_management_db}
@@ -10,34 +11,32 @@ services:
       - '${POSTGRES_PORT:-5432}:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-analytica_task_management_db}',
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
 
-  migrate:
+  analytica-server:
+    container_name: analytica-server
     build:
       context: .
       dockerfile: Dockerfile
-      target: builder
-    depends_on:
-      - postgres
-    env_file: .env
-    environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-123456}@postgres:5432/${POSTGRES_DB:-analytica_task_management_db}?schema=public
-    command: pnpm exec prisma migrate deploy
-    restart: 'no'
-
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: production
     restart: unless-stopped
     depends_on:
-      - migrate
-      - postgres
+      analytica-db:
+        condition: service_healthy
     env_file: .env
     environment:
       NODE_ENV: production
       PORT: ${PORT:-5000}
-      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-123456}@postgres:5432/${POSTGRES_DB:-analytica_task_management_db}?schema=public
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-123456}@analytica-db:5432/${POSTGRES_DB:-analytica_task_management_db}?schema=public
+    command: sh -c "npx prisma migrate deploy && node dist/main.js"
     ports:
       - '${PORT:-5000}:5000'
 
