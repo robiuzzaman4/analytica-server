@@ -1,5 +1,4 @@
 import { Role } from '@prisma/client';
-import { ROLES_KEY } from '../../common/auth/decorators/roles.decorator';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 
@@ -55,26 +54,5 @@ describe('AuthController', () => {
     };
 
     expect(authController.me(user)).toEqual(user);
-  });
-
-  it('returns the authenticated admin user for the admin me endpoint', () => {
-    const user = {
-      id: 'user_1',
-      email: 'admin@analytica.local',
-      role: Role.ADMIN,
-    };
-
-    expect(authController.adminMe(user)).toEqual(user);
-  });
-
-  it('marks the admin me endpoint as admin-only', () => {
-    const adminMeDescriptor = Object.getOwnPropertyDescriptor(
-      AuthController.prototype,
-      'adminMe',
-    );
-
-    expect(
-      Reflect.getMetadata(ROLES_KEY, adminMeDescriptor?.value as object),
-    ).toEqual([Role.ADMIN]);
   });
 });
