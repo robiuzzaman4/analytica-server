@@ -148,6 +148,63 @@ describe('TasksService', () => {
     ).rejects.toBeInstanceOf(NotFoundException);
   });
 
+  it('updates the status of an assigned task owned by the user', async () => {
+    prismaService.task.findFirst.mockResolvedValue({
+      id: 'task_1',
+      title: 'Prepare release notes',
+      description: 'Summarize changes',
+      status: TaskStatus.PENDING,
+      assignedUserId: 'user_1',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      assignedUser: {
+        id: 'user_1',
+        name: 'Demo User',
+        email: 'user@analytica.local',
+        role: Role.USER,
+      },
+    });
+    prismaService.task.update.mockResolvedValue({
+      id: 'task_1',
+      status: TaskStatus.DONE,
+    });
+
+    await expect(
+      tasksService.updateAssignedTaskStatus('user_1', 'task_1', {
+        status: TaskStatus.DONE,
+      }),
+    ).resolves.toEqual({
+      id: 'task_1',
+      status: TaskStatus.DONE,
+    });
+
+    const [updateCall] = prismaService.task.update.mock.calls as [
+      [
+        {
+          where: { id: string };
+          data: {
+            status: TaskStatus;
+          };
+        },
+      ],
+    ];
+
+    expect(updateCall[0].where).toEqual({ id: 'task_1' });
+    expect(updateCall[0].data).toEqual({
+      status: TaskStatus.DONE,
+    });
+  });
+
+  it('rejects status updates when the user does not own the task', async () => {
+    prismaService.task.findFirst.mockResolvedValue(null);
+
+    await expect(
+      tasksService.updateAssignedTaskStatus('user_1', 'task_2', {
+        status: TaskStatus.DONE,
+      }),
+    ).rejects.toBeInstanceOf(NotFoundException);
+  });
+
   it('updates a task after ensuring it exists', async () => {
     prismaService.task.findUnique.mockResolvedValue({
       id: 'task_1',

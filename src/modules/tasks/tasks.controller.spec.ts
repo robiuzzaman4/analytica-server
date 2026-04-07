@@ -2,6 +2,7 @@ import { Role, TaskStatus } from '@prisma/client';
 import { ROLES_KEY } from '../../common/auth/decorators/roles.decorator';
 import { AuthenticatedUser } from '../../common/auth/interfaces/authenticated-user.interface';
 import { CreateTaskDto } from './dto/create-task.dto';
+import { UpdateTaskStatusDto } from './dto/update-task-status.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { TasksController } from './tasks.controller';
 import { TasksService } from './tasks.service';
@@ -13,6 +14,7 @@ describe('TasksController', () => {
     findAll: jest.Mock;
     findAssignedTasks: jest.Mock;
     findAssignedTaskById: jest.Mock;
+    updateAssignedTaskStatus: jest.Mock;
     findOne: jest.Mock;
     update: jest.Mock;
     remove: jest.Mock;
@@ -24,6 +26,7 @@ describe('TasksController', () => {
       findAll: jest.fn(),
       findAssignedTasks: jest.fn(),
       findAssignedTaskById: jest.fn(),
+      updateAssignedTaskStatus: jest.fn(),
       findOne: jest.fn(),
       update: jest.fn(),
       remove: jest.fn(),
@@ -117,6 +120,46 @@ describe('TasksController', () => {
     expect(tasksService.findAssignedTaskById).toHaveBeenCalledWith(
       'user_1',
       'task_1',
+    );
+  });
+
+  it('marks current-user task status updates as user-only', () => {
+    const descriptor = Object.getOwnPropertyDescriptor(
+      TasksController.prototype,
+      'updateMyTaskStatus',
+    );
+
+    expect(Reflect.getMetadata(ROLES_KEY, descriptor?.value as object)).toEqual(
+      [Role.USER],
+    );
+  });
+
+  it('updates only the status of an authenticated user task', async () => {
+    const user: AuthenticatedUser = {
+      id: 'user_1',
+      email: 'user@analytica.local',
+      role: Role.USER,
+    };
+    const updateTaskStatusDto: UpdateTaskStatusDto = {
+      status: TaskStatus.PROCESSING,
+    };
+
+    tasksService.updateAssignedTaskStatus.mockResolvedValue({
+      id: 'task_1',
+      ...updateTaskStatusDto,
+    });
+
+    await expect(
+      tasksController.updateMyTaskStatus(user, 'task_1', updateTaskStatusDto),
+    ).resolves.toEqual({
+      id: 'task_1',
+      ...updateTaskStatusDto,
+    });
+
+    expect(tasksService.updateAssignedTaskStatus).toHaveBeenCalledWith(
+      'user_1',
+      'task_1',
+      updateTaskStatusDto,
     );
   });
 

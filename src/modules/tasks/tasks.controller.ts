@@ -15,6 +15,7 @@ import { RolesGuard } from '../../common/auth/guards/roles.guard';
 import { AuthenticatedUser } from '../../common/auth/interfaces/authenticated-user.interface';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CreateTaskDto } from './dto/create-task.dto';
+import { UpdateTaskStatusDto } from './dto/update-task-status.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { TasksService } from './tasks.service';
 
@@ -51,6 +52,21 @@ export class TasksController {
     @Param('id') id: string,
   ) {
     return this.tasksService.findAssignedTaskById(user!.id, id);
+  }
+
+  @Roles(Role.USER)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Patch(':id/status')
+  updateMyTaskStatus(
+    @CurrentUser() user: AuthenticatedUser | undefined,
+    @Param('id') id: string,
+    @Body() updateTaskStatusDto: UpdateTaskStatusDto,
+  ) {
+    return this.tasksService.updateAssignedTaskStatus(
+      user!.id,
+      id,
+      updateTaskStatusDto,
+    );
   }
 
   @Roles(Role.ADMIN)

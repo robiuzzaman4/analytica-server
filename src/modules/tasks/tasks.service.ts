@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma, TaskStatus } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { CreateTaskDto } from './dto/create-task.dto';
+import { UpdateTaskStatusDto } from './dto/update-task-status.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 
 const taskSelect = {
@@ -40,15 +41,15 @@ export class TasksService {
     });
   }
 
-  async findAll() {
-    return await this.prismaService.task.findMany({
+  findAll() {
+    return this.prismaService.task.findMany({
       orderBy: { createdAt: 'desc' },
       select: taskSelect,
     });
   }
 
-  async findAssignedTasks(userId: string) {
-    return await this.prismaService.task.findMany({
+  findAssignedTasks(userId: string) {
+    return this.prismaService.task.findMany({
       where: { assignedUserId: userId },
       orderBy: { createdAt: 'desc' },
       select: taskSelect,
@@ -95,6 +96,22 @@ export class TasksService {
         description: updateTaskDto.description,
         status: updateTaskDto.status,
         assignedUserId: updateTaskDto.assignedUserId,
+      },
+      select: taskSelect,
+    });
+  }
+
+  async updateAssignedTaskStatus(
+    userId: string,
+    id: string,
+    updateTaskStatusDto: UpdateTaskStatusDto,
+  ) {
+    await this.findAssignedTaskById(userId, id);
+
+    return this.prismaService.task.update({
+      where: { id },
+      data: {
+        status: updateTaskStatusDto.status,
       },
       select: taskSelect,
     });
