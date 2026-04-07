@@ -12,6 +12,8 @@ async function bootstrap() {
   const port = Number(process.env.PORT ?? 5000);
   const prismaService = app.get(PrismaService);
 
+  app.setGlobalPrefix('api/v1');
+
   app.enableCors({
     origin: true,
     credentials: true,
