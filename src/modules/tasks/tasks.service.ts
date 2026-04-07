@@ -40,8 +40,16 @@ export class TasksService {
     });
   }
 
-  findAll() {
-    return this.prismaService.task.findMany({
+  async findAll() {
+    return await this.prismaService.task.findMany({
+      orderBy: { createdAt: 'desc' },
+      select: taskSelect,
+    });
+  }
+
+  async findAssignedTasks(userId: string) {
+    return await this.prismaService.task.findMany({
+      where: { assignedUserId: userId },
       orderBy: { createdAt: 'desc' },
       select: taskSelect,
     });
@@ -50,6 +58,22 @@ export class TasksService {
   async findOne(id: string) {
     const task = await this.prismaService.task.findUnique({
       where: { id },
+      select: taskSelect,
+    });
+
+    if (!task) {
+      throw new NotFoundException(`Task with id "${id}" not found`);
+    }
+
+    return task;
+  }
+
+  async findAssignedTaskById(userId: string, id: string) {
+    const task = await this.prismaService.task.findFirst({
+      where: {
+        id,
+        assignedUserId: userId,
+      },
       select: taskSelect,
     });
 

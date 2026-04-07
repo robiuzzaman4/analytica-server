@@ -6,5 +6,6 @@ import { TasksService } from './tasks.service';
 @Module({
   controllers: [TasksController],
   providers: [TasksService, RolesGuard],
+  exports: [TasksService],
 })
 export class TasksModule {}

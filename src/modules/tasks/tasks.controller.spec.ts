@@ -1,5 +1,6 @@
 import { Role, TaskStatus } from '@prisma/client';
 import { ROLES_KEY } from '../../common/auth/decorators/roles.decorator';
+import { AuthenticatedUser } from '../../common/auth/interfaces/authenticated-user.interface';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { TasksController } from './tasks.controller';
@@ -10,6 +11,8 @@ describe('TasksController', () => {
   let tasksService: {
     create: jest.Mock;
     findAll: jest.Mock;
+    findAssignedTasks: jest.Mock;
+    findAssignedTaskById: jest.Mock;
     findOne: jest.Mock;
     update: jest.Mock;
     remove: jest.Mock;
@@ -19,6 +22,8 @@ describe('TasksController', () => {
     tasksService = {
       create: jest.fn(),
       findAll: jest.fn(),
+      findAssignedTasks: jest.fn(),
+      findAssignedTaskById: jest.fn(),
       findOne: jest.fn(),
       update: jest.fn(),
       remove: jest.fn(),
@@ -29,10 +34,15 @@ describe('TasksController', () => {
     );
   });
 
-  it('marks the controller as admin-only', () => {
-    expect(Reflect.getMetadata(ROLES_KEY, TasksController)).toEqual([
-      Role.ADMIN,
-    ]);
+  it('marks task creation as admin-only', () => {
+    const descriptor = Object.getOwnPropertyDescriptor(
+      TasksController.prototype,
+      'create',
+    );
+
+    expect(Reflect.getMetadata(ROLES_KEY, descriptor?.value as object)).toEqual(
+      [Role.ADMIN],
+    );
   });
 
   it('delegates creation to the service', async () => {
@@ -60,6 +70,54 @@ describe('TasksController', () => {
       { id: 'task_1' },
     ]);
     expect(tasksService.findAll).toHaveBeenCalled();
+  });
+
+  it('marks current-user task listing as user-only', () => {
+    const descriptor = Object.getOwnPropertyDescriptor(
+      TasksController.prototype,
+      'findMyTasks',
+    );
+
+    expect(Reflect.getMetadata(ROLES_KEY, descriptor?.value as object)).toEqual(
+      [Role.USER],
+    );
+  });
+
+  it('returns tasks assigned to the authenticated user', async () => {
+    const user: AuthenticatedUser = {
+      id: 'user_1',
+      email: 'user@analytica.local',
+      role: Role.USER,
+    };
+
+    tasksService.findAssignedTasks.mockResolvedValue([{ id: 'task_1' }]);
+
+    await expect(tasksController.findMyTasks(user)).resolves.toEqual([
+      { id: 'task_1' },
+    ]);
+
+    expect(tasksService.findAssignedTasks).toHaveBeenCalledWith('user_1');
+  });
+
+  it('returns a single assigned task for the authenticated user', async () => {
+    const user: AuthenticatedUser = {
+      id: 'user_1',
+      email: 'user@analytica.local',
+      role: Role.USER,
+    };
+
+    tasksService.findAssignedTaskById.mockResolvedValue({ id: 'task_1' });
+
+    await expect(
+      tasksController.findMyTaskById(user, 'task_1'),
+    ).resolves.toEqual({
+      id: 'task_1',
+    });
+
+    expect(tasksService.findAssignedTaskById).toHaveBeenCalledWith(
+      'user_1',
+      'task_1',
+    );
   });
 
   it('delegates fetching a single task to the service', async () => {

@@ -9,6 +9,7 @@ describe('TasksService', () => {
     task: {
       create: jest.Mock;
       findMany: jest.Mock;
+      findFirst: jest.Mock;
       findUnique: jest.Mock;
       update: jest.Mock;
       delete: jest.Mock;
@@ -23,6 +24,7 @@ describe('TasksService', () => {
       task: {
         create: jest.fn(),
         findMany: jest.fn(),
+        findFirst: jest.fn(),
         findUnique: jest.fn(),
         update: jest.fn(),
         delete: jest.fn(),
@@ -104,6 +106,46 @@ describe('TasksService', () => {
     await expect(tasksService.findOne('missing_task')).rejects.toBeInstanceOf(
       NotFoundException,
     );
+  });
+
+  it('lists only tasks assigned to the requested user', async () => {
+    prismaService.task.findMany.mockResolvedValue([{ id: 'task_1' }]);
+
+    await expect(tasksService.findAssignedTasks('user_1')).resolves.toEqual([
+      { id: 'task_1' },
+    ]);
+
+    expect(prismaService.task.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { assignedUserId: 'user_1' },
+        orderBy: { createdAt: 'desc' },
+      }),
+    );
+  });
+
+  it('returns an assigned task only when the user owns it', async () => {
+    prismaService.task.findFirst.mockResolvedValue({ id: 'task_1' });
+
+    await expect(
+      tasksService.findAssignedTaskById('user_1', 'task_1'),
+    ).resolves.toEqual({ id: 'task_1' });
+
+    expect(prismaService.task.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          id: 'task_1',
+          assignedUserId: 'user_1',
+        },
+      }),
+    );
+  });
+
+  it('rejects fetching an assigned task when the user does not own it', async () => {
+    prismaService.task.findFirst.mockResolvedValue(null);
+
+    await expect(
+      tasksService.findAssignedTaskById('user_1', 'task_2'),
+    ).rejects.toBeInstanceOf(NotFoundException);
   });
 
   it('updates a task after ensuring it exists', async () => {

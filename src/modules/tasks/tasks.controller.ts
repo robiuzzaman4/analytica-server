@@ -9,39 +9,66 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { Role } from '@prisma/client';
+import { CurrentUser } from '../../common/auth/decorators/current-user.decorator';
 import { Roles } from '../../common/auth/decorators/roles.decorator';
 import { RolesGuard } from '../../common/auth/guards/roles.guard';
+import { AuthenticatedUser } from '../../common/auth/interfaces/authenticated-user.interface';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { TasksService } from './tasks.service';
 
-@Roles(Role.ADMIN)
-@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('tasks')
 export class TasksController {
   constructor(private readonly tasksService: TasksService) {}
 
+  @Roles(Role.ADMIN)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Post()
   create(@Body() createTaskDto: CreateTaskDto) {
     return this.tasksService.create(createTaskDto);
   }
 
+  @Roles(Role.ADMIN)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Get()
   findAll() {
     return this.tasksService.findAll();
   }
 
+  @Roles(Role.USER)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Get('me')
+  findMyTasks(@CurrentUser() user: AuthenticatedUser | undefined) {
+    return this.tasksService.findAssignedTasks(user!.id);
+  }
+
+  @Roles(Role.USER)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Get('me/:id')
+  findMyTaskById(
+    @CurrentUser() user: AuthenticatedUser | undefined,
+    @Param('id') id: string,
+  ) {
+    return this.tasksService.findAssignedTaskById(user!.id, id);
+  }
+
+  @Roles(Role.ADMIN)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.tasksService.findOne(id);
   }
 
+  @Roles(Role.ADMIN)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateTaskDto: UpdateTaskDto) {
     return this.tasksService.update(id, updateTaskDto);
   }
 
+  @Roles(Role.ADMIN)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.tasksService.remove(id);
