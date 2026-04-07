@@ -95,7 +95,11 @@ Copy-Item .env.example .env
 Default local values:
 
 ```env
-PORT=3000
+POSTGRES_DB=analytica_task_management_db
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=123456
+POSTGRES_PORT=5432
+PORT=5000
 DATABASE_URL="postgresql://postgres:123456@localhost:5432/analytica_task_management_db?schema=public"
 JWT_SECRET="change-me-later"
 DEMO_ADMIN_NAME="Admin User"
@@ -155,10 +159,42 @@ This starts:
 - PostgreSQL on `localhost:5432`
 - the NestJS app on `localhost:3000`
 
-Note:
+The compose setup now:
 
-- if you run with Docker, the compose file overrides `DATABASE_URL` for the app container
-- depending on your workflow, you may still want to run migrations before first use if your database is empty
+- uses values from `.env` / `.env.example` instead of hardcoded DB credentials
+- builds a slimmer production-style app image
+- points the app container to the `postgres` service automatically
+- runs `prisma migrate deploy` in a separate migration service before starting the app
+
+Useful env values for Docker:
+
+- `POSTGRES_DB`
+- `POSTGRES_USER`
+- `POSTGRES_PASSWORD`
+- `POSTGRES_PORT`
+- `PORT`
+
+For local non-Docker development, keep `DATABASE_URL` pointing to `localhost`.
+For Docker Compose, the app container internally uses the `postgres` hostname automatically.
+
+## Production Notes
+
+The `Dockerfile` now uses a multi-stage build:
+
+- `builder` installs dependencies, generates Prisma client, and builds the app
+- `prod-deps` prunes dev dependencies before the final image is created
+- `production` copies the built output and production dependencies only, then starts `node dist/main`
+
+For production deployment, provide these env vars at minimum:
+
+- `DATABASE_URL`
+- `JWT_SECRET`
+- `DEMO_ADMIN_NAME`
+- `DEMO_ADMIN_EMAIL`
+- `DEMO_ADMIN_PASSWORD`
+- `DEMO_USER_NAME`
+- `DEMO_USER_EMAIL`
+- `DEMO_USER_PASSWORD`
 
 ## Prisma / Seed Commands
 
