@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { Prisma, TaskStatus } from '@prisma/client';
+import { AuditActionType, Prisma, TaskStatus } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { AuditLogsService } from '../audit-logs/audit-logs.service';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskStatusDto } from './dto/update-task-status.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
@@ -23,14 +24,19 @@ const taskSelect = {
   },
 } satisfies Prisma.TaskSelect;
 
+type TaskRecord = Prisma.TaskGetPayload<{ select: typeof taskSelect }>;
+
 @Injectable()
 export class TasksService {
-  constructor(private readonly prismaService: PrismaService) {}
+  constructor(
+    private readonly prismaService: PrismaService,
+    private readonly auditLogsService: AuditLogsService,
+  ) {}
 
-  async create(createTaskDto: CreateTaskDto) {
+  async create(actorUserId: string, createTaskDto: CreateTaskDto) {
     await this.ensureAssignedUserExists(createTaskDto.assignedUserId);
 
-    return this.prismaService.task.create({
+    const createdTask = await this.prismaService.task.create({
       data: {
         title: createTaskDto.title,
         description: createTaskDto.description,
@@ -39,6 +45,24 @@ export class TasksService {
       },
       select: taskSelect,
     });
+
+    await this.auditLogsService.createTaskLog({
+      actorUserId,
+      actionType: AuditActionType.TASK_CREATED,
+      targetEntityId: createdTask.id,
+      summary: `Task "${createdTask.title}" created`,
+    });
+
+    if (createdTask.assignedUserId) {
+      await this.auditLogsService.createTaskLog({
+        actorUserId,
+        actionType: AuditActionType.TASK_ASSIGNED,
+        targetEntityId: createdTask.id,
+        summary: `Task "${createdTask.title}" assigned to user "${createdTask.assignedUserId}"`,
+      });
+    }
+
+    return createdTask;
   }
 
   findAll() {
@@ -85,11 +109,11 @@ export class TasksService {
     return task;
   }
 
-  async update(id: string, updateTaskDto: UpdateTaskDto) {
-    await this.findOne(id);
+  async update(actorUserId: string, id: string, updateTaskDto: UpdateTaskDto) {
+    const existingTask = await this.findOne(id);
     await this.ensureAssignedUserExists(updateTaskDto.assignedUserId);
 
-    return this.prismaService.task.update({
+    const updatedTask = await this.prismaService.task.update({
       where: { id },
       data: {
         title: updateTaskDto.title,
@@ -99,31 +123,53 @@ export class TasksService {
       },
       select: taskSelect,
     });
+
+    await this.logAdminTaskUpdate(actorUserId, existingTask, updatedTask);
+
+    return updatedTask;
   }
 
   async updateAssignedTaskStatus(
-    userId: string,
+    actorUserId: string,
     id: string,
     updateTaskStatusDto: UpdateTaskStatusDto,
   ) {
-    await this.findAssignedTaskById(userId, id);
+    const existingTask = await this.findAssignedTaskById(actorUserId, id);
 
-    return this.prismaService.task.update({
+    const updatedTask = await this.prismaService.task.update({
       where: { id },
       data: {
         status: updateTaskStatusDto.status,
       },
       select: taskSelect,
     });
+
+    await this.auditLogsService.createTaskLog({
+      actorUserId,
+      actionType: AuditActionType.TASK_STATUS_CHANGED,
+      targetEntityId: updatedTask.id,
+      summary: `Task "${updatedTask.title}" status changed from "${existingTask.status}" to "${updatedTask.status}"`,
+    });
+
+    return updatedTask;
   }
 
-  async remove(id: string) {
+  async remove(actorUserId: string, id: string) {
     await this.findOne(id);
 
-    return this.prismaService.task.delete({
+    const deletedTask = await this.prismaService.task.delete({
       where: { id },
       select: taskSelect,
     });
+
+    await this.auditLogsService.createTaskLog({
+      actorUserId,
+      actionType: AuditActionType.TASK_DELETED,
+      targetEntityId: deletedTask.id,
+      summary: `Task "${deletedTask.title}" deleted`,
+    });
+
+    return deletedTask;
   }
 
   private async ensureAssignedUserExists(assignedUserId?: string | null) {
@@ -140,6 +186,42 @@ export class TasksService {
       throw new NotFoundException(
         `Assigned user with id "${assignedUserId}" not found`,
       );
+    }
+  }
+
+  private async logAdminTaskUpdate(
+    actorUserId: string,
+    existingTask: TaskRecord,
+    updatedTask: TaskRecord,
+  ) {
+    if (
+      existingTask.title !== updatedTask.title ||
+      existingTask.description !== updatedTask.description
+    ) {
+      await this.auditLogsService.createTaskLog({
+        actorUserId,
+        actionType: AuditActionType.TASK_UPDATED,
+        targetEntityId: updatedTask.id,
+        summary: `Task "${updatedTask.title}" details updated`,
+      });
+    }
+
+    if (existingTask.assignedUserId !== updatedTask.assignedUserId) {
+      await this.auditLogsService.createTaskLog({
+        actorUserId,
+        actionType: AuditActionType.TASK_ASSIGNED,
+        targetEntityId: updatedTask.id,
+        summary: `Task "${updatedTask.title}" assignment changed`,
+      });
+    }
+
+    if (existingTask.status !== updatedTask.status) {
+      await this.auditLogsService.createTaskLog({
+        actorUserId,
+        actionType: AuditActionType.TASK_STATUS_CHANGED,
+        targetEntityId: updatedTask.id,
+        summary: `Task "${updatedTask.title}" status changed from "${existingTask.status}" to "${updatedTask.status}"`,
+      });
     }
   }
 }

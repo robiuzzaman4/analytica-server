@@ -41,8 +41,6 @@ CREATE TABLE "audit_logs" (
     "targetEntity" TEXT NOT NULL,
     "targetEntityId" TEXT NOT NULL,
     "summary" TEXT NOT NULL,
-    "beforeData" JSONB,
-    "afterData" JSONB,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "audit_logs_pkey" PRIMARY KEY ("id")
@@ -80,3 +78,4 @@ ALTER TABLE "tasks" ADD CONSTRAINT "tasks_assignedUserId_fkey" FOREIGN KEY ("ass
 
 -- AddForeignKey
 ALTER TABLE "audit_logs" ADD CONSTRAINT "audit_logs_actorUserId_fkey" FOREIGN KEY ("actorUserId") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+

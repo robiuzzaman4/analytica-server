@@ -55,15 +55,20 @@ describe('TasksController', () => {
       status: TaskStatus.PENDING,
       assignedUserId: 'user_1',
     };
+    const user: AuthenticatedUser = {
+      id: 'admin_1',
+      email: 'admin@analytica.local',
+      role: Role.ADMIN,
+    };
 
     tasksService.create.mockResolvedValue({ id: 'task_1', ...createTaskDto });
 
-    await expect(tasksController.create(createTaskDto)).resolves.toEqual({
+    await expect(tasksController.create(user, createTaskDto)).resolves.toEqual({
       id: 'task_1',
       ...createTaskDto,
     });
 
-    expect(tasksService.create).toHaveBeenCalledWith(createTaskDto);
+    expect(tasksService.create).toHaveBeenCalledWith('admin_1', createTaskDto);
   });
 
   it('delegates listing to the service', async () => {
@@ -177,6 +182,11 @@ describe('TasksController', () => {
     const updateTaskDto: UpdateTaskDto = {
       status: TaskStatus.DONE,
     };
+    const user: AuthenticatedUser = {
+      id: 'admin_1',
+      email: 'admin@analytica.local',
+      role: Role.ADMIN,
+    };
 
     tasksService.update.mockResolvedValue({
       id: 'task_1',
@@ -184,22 +194,32 @@ describe('TasksController', () => {
     });
 
     await expect(
-      tasksController.update('task_1', updateTaskDto),
+      tasksController.update(user, 'task_1', updateTaskDto),
     ).resolves.toEqual({
       id: 'task_1',
       ...updateTaskDto,
     });
 
-    expect(tasksService.update).toHaveBeenCalledWith('task_1', updateTaskDto);
+    expect(tasksService.update).toHaveBeenCalledWith(
+      'admin_1',
+      'task_1',
+      updateTaskDto,
+    );
   });
 
   it('delegates deletion to the service', async () => {
+    const user: AuthenticatedUser = {
+      id: 'admin_1',
+      email: 'admin@analytica.local',
+      role: Role.ADMIN,
+    };
+
     tasksService.remove.mockResolvedValue({ id: 'task_1' });
 
-    await expect(tasksController.remove('task_1')).resolves.toEqual({
+    await expect(tasksController.remove(user, 'task_1')).resolves.toEqual({
       id: 'task_1',
     });
 
-    expect(tasksService.remove).toHaveBeenCalledWith('task_1');
+    expect(tasksService.remove).toHaveBeenCalledWith('admin_1', 'task_1');
   });
 });

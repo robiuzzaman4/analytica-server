@@ -1,6 +1,7 @@
 import { NotFoundException } from '@nestjs/common';
-import { Role, TaskStatus } from '@prisma/client';
+import { AuditActionType, Role, TaskStatus } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { AuditLogsService } from '../audit-logs/audit-logs.service';
 import { TasksService } from './tasks.service';
 
 describe('TasksService', () => {
@@ -18,6 +19,9 @@ describe('TasksService', () => {
       findUnique: jest.Mock;
     };
   };
+  let auditLogsService: {
+    createTaskLog: jest.Mock;
+  };
 
   beforeEach(() => {
     prismaService = {
@@ -34,18 +38,38 @@ describe('TasksService', () => {
       },
     };
 
-    tasksService = new TasksService(prismaService as unknown as PrismaService);
+    auditLogsService = {
+      createTaskLog: jest.fn().mockResolvedValue({ id: 'audit_1' }),
+    };
+
+    tasksService = new TasksService(
+      prismaService as unknown as PrismaService,
+      auditLogsService as unknown as AuditLogsService,
+    );
   });
 
   it('creates a task with a default status', async () => {
-    prismaService.task.create.mockResolvedValue({ id: 'task_1' });
+    prismaService.task.create.mockResolvedValue({
+      id: 'task_1',
+      title: 'Prepare release notes',
+      description: 'Summarize changes',
+      status: TaskStatus.PENDING,
+      assignedUserId: null,
+      createdAt: new Date('2026-04-07T00:00:00.000Z'),
+      updatedAt: new Date('2026-04-07T00:00:00.000Z'),
+      assignedUser: null,
+    });
 
     await expect(
-      tasksService.create({
+      tasksService.create('admin_1', {
         title: 'Prepare release notes',
         description: 'Summarize changes',
       }),
-    ).resolves.toEqual({ id: 'task_1' });
+    ).resolves.toEqual(
+      expect.objectContaining({
+        id: 'task_1',
+      }),
+    );
 
     const [createCall] = prismaService.task.create.mock.calls as [
       [
@@ -66,13 +90,20 @@ describe('TasksService', () => {
       status: TaskStatus.PENDING,
       assignedUserId: null,
     });
+    expect(auditLogsService.createTaskLog).toHaveBeenCalledWith(
+      expect.objectContaining({
+        actorUserId: 'admin_1',
+        actionType: AuditActionType.TASK_CREATED,
+        targetEntityId: 'task_1',
+      }),
+    );
   });
 
   it('rejects creation when the assigned user does not exist', async () => {
     prismaService.user.findUnique.mockResolvedValue(null);
 
     await expect(
-      tasksService.create({
+      tasksService.create('admin_1', {
         title: 'Prepare release notes',
         description: 'Summarize changes',
         assignedUserId: 'missing_user',
@@ -193,6 +224,13 @@ describe('TasksService', () => {
     expect(updateCall[0].data).toEqual({
       status: TaskStatus.DONE,
     });
+    expect(auditLogsService.createTaskLog).toHaveBeenCalledWith(
+      expect.objectContaining({
+        actorUserId: 'user_1',
+        actionType: AuditActionType.TASK_STATUS_CHANGED,
+        targetEntityId: 'task_1',
+      }),
+    );
   });
 
   it('rejects status updates when the user does not own the task', async () => {
@@ -225,7 +263,7 @@ describe('TasksService', () => {
     prismaService.task.update.mockResolvedValue({ id: 'task_1' });
 
     await expect(
-      tasksService.update('task_1', {
+      tasksService.update('admin_1', 'task_1', {
         status: TaskStatus.DONE,
         assignedUserId: 'user_2',
       }),
@@ -252,6 +290,20 @@ describe('TasksService', () => {
       status: TaskStatus.DONE,
       assignedUserId: 'user_2',
     });
+    expect(auditLogsService.createTaskLog).toHaveBeenCalledWith(
+      expect.objectContaining({
+        actorUserId: 'admin_1',
+        actionType: AuditActionType.TASK_ASSIGNED,
+        targetEntityId: 'task_1',
+      }),
+    );
+    expect(auditLogsService.createTaskLog).toHaveBeenCalledWith(
+      expect.objectContaining({
+        actorUserId: 'admin_1',
+        actionType: AuditActionType.TASK_STATUS_CHANGED,
+        targetEntityId: 'task_1',
+      }),
+    );
   });
 
   it('rejects updates when the assigned user does not exist', async () => {
@@ -268,7 +320,7 @@ describe('TasksService', () => {
     prismaService.user.findUnique.mockResolvedValue(null);
 
     await expect(
-      tasksService.update('task_1', {
+      tasksService.update('admin_1', 'task_1', {
         assignedUserId: 'missing_user',
       }),
     ).rejects.toBeInstanceOf(NotFoundException);
@@ -287,13 +339,20 @@ describe('TasksService', () => {
     });
     prismaService.task.delete.mockResolvedValue({ id: 'task_1' });
 
-    await expect(tasksService.remove('task_1')).resolves.toEqual({
+    await expect(tasksService.remove('admin_1', 'task_1')).resolves.toEqual({
       id: 'task_1',
     });
 
     expect(prismaService.task.delete).toHaveBeenCalledWith(
       expect.objectContaining({
         where: { id: 'task_1' },
+      }),
+    );
+    expect(auditLogsService.createTaskLog).toHaveBeenCalledWith(
+      expect.objectContaining({
+        actorUserId: 'admin_1',
+        actionType: AuditActionType.TASK_DELETED,
+        targetEntityId: 'task_1',
       }),
     );
   });

@@ -64,8 +64,6 @@ model AuditLog {
   targetEntity   String
   targetEntityId String
   summary        String
-  beforeData     Json?
-  afterData      Json?
   createdAt      DateTime        @default(now())
 
   @@index([actorUserId])
@@ -74,3 +72,4 @@ model AuditLog {
   @@index([createdAt])
   @@map("audit_logs")
 }
+

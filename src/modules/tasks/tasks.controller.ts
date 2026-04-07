@@ -26,8 +26,11 @@ export class TasksController {
   @Roles(Role.ADMIN)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Post()
-  create(@Body() createTaskDto: CreateTaskDto) {
-    return this.tasksService.create(createTaskDto);
+  create(
+    @CurrentUser() user: AuthenticatedUser | undefined,
+    @Body() createTaskDto: CreateTaskDto,
+  ) {
+    return this.tasksService.create(user!.id, createTaskDto);
   }
 
   @Roles(Role.ADMIN)
@@ -79,14 +82,21 @@ export class TasksController {
   @Roles(Role.ADMIN)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateTaskDto: UpdateTaskDto) {
-    return this.tasksService.update(id, updateTaskDto);
+  update(
+    @CurrentUser() user: AuthenticatedUser | undefined,
+    @Param('id') id: string,
+    @Body() updateTaskDto: UpdateTaskDto,
+  ) {
+    return this.tasksService.update(user!.id, id, updateTaskDto);
   }
 
   @Roles(Role.ADMIN)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.tasksService.remove(id);
+  remove(
+    @CurrentUser() user: AuthenticatedUser | undefined,
+    @Param('id') id: string,
+  ) {
+    return this.tasksService.remove(user!.id, id);
   }
 }
