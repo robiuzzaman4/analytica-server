@@ -6,10 +6,12 @@ import {
 } from './common/seed/demo-users.seed';
 import { PrismaService } from './common/prisma/prisma.service';
 import { AppModule } from './app.module';
+import { ConfigService } from '@nestjs/config';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  const port = Number(process.env.PORT ?? 5000);
+  const configService = app.get(ConfigService);
+  const port = configService.get<number>('PORT') || 5000;
   const prismaService = app.get(PrismaService);
 
   app.setGlobalPrefix('api/v1');
@@ -34,9 +36,10 @@ async function bootstrap() {
 
   await ensureDemoUsersSeeded(prismaService, demoUserConfig);
   await app.listen(port);
+  console.log(`SERVER IS RUNNING ON PORT: ${port}`);
 }
 
 bootstrap().catch((error: unknown) => {
-  console.error('Application failed to start:', error);
+  console.error('FAILED TO RUN SERVER:', error);
   process.exit(1);
 });
