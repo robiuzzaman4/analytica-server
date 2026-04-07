@@ -29,6 +29,7 @@ NestJS backend for a small task management system with JWT auth, role-based acce
 ### Auth
 
 - `POST /auth/login`
+- `POST /auth/logout`
 - `GET /auth/me`
 
 ### Tasks

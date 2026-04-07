@@ -83,4 +83,10 @@ describe('AuthService', () => {
       authService.login('admin@analytica.local', 'wrong-password'),
     ).rejects.toBeInstanceOf(UnauthorizedException);
   });
+
+  it('returns a success message for logout', () => {
+    expect(authService.logout()).toEqual({
+      message: 'Logged out successfully',
+    });
+  });
 });

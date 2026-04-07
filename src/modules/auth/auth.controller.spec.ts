@@ -5,15 +5,19 @@ import { AuthService } from './auth.service';
 
 describe('AuthController', () => {
   let authController: AuthController;
-  let authService: { login: jest.Mock };
-  let response: { cookie: jest.Mock };
+  let authService: { login: jest.Mock; logout: jest.Mock };
+  let response: { cookie: jest.Mock; clearCookie: jest.Mock };
 
   beforeEach(() => {
     authService = {
       login: jest.fn(),
+      logout: jest.fn().mockReturnValue({
+        message: 'Logged out successfully',
+      }),
     };
     response = {
       cookie: jest.fn(),
+      clearCookie: jest.fn(),
     };
 
     authController = new AuthController(authService as unknown as AuthService);
@@ -72,5 +76,21 @@ describe('AuthController', () => {
     };
 
     expect(authController.me(user)).toEqual(user);
+  });
+
+  it('clears the auth cookie and delegates logout to the auth service', () => {
+    expect(authController.logout(response as unknown as Response)).toEqual({
+      message: 'Logged out successfully',
+    });
+
+    expect(response.clearCookie).toHaveBeenCalledWith(
+      'accessToken',
+      expect.objectContaining({
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+      }),
+    );
+    expect(authService.logout).toHaveBeenCalled();
   });
 });

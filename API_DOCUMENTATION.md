@@ -112,8 +112,24 @@ Cookie behavior:
 
 - Successful login also sets an `httpOnly` cookie named `accessToken`
 - The backend accepts JWTs from either:
-  - `Authorization: Bearer <token>`
-  - browser cookie `accessToken`
+- `Authorization: Bearer <token>`
+- browser cookie `accessToken`
+
+### `POST /auth/logout`
+
+Clears the authentication cookie for the current user.
+
+Auth:
+
+- Any authenticated user
+
+Response:
+
+```json
+{
+  "message": "Logged out successfully"
+}
+```
 
 ## Tasks
 

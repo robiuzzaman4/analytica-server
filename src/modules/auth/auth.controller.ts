@@ -36,4 +36,17 @@ export class AuthController {
   me(@CurrentUser() user: AuthenticatedUser | undefined) {
     return user;
   }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('logout')
+  logout(@Res({ passthrough: true }) response: Response) {
+    response.clearCookie('accessToken', {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      path: '/',
+    });
+
+    return this.authService.logout();
+  }
 }
