@@ -16,6 +16,7 @@ export class PrismaService
     const pool = new Pool({ connectionString });
     const adapter = new PrismaPg(pool);
 
+    // === use prisma pg adapter with shared pool ===
     super({ adapter });
 
     this.pool = pool;
@@ -26,6 +27,7 @@ export class PrismaService
     console.log('DATABASE CONNECTED');
   }
 
+  // === close prisma and pool connections ===
   async onModuleDestroy(): Promise<void> {
     await this.$disconnect();
     await this.pool.end();

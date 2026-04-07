@@ -13,6 +13,7 @@ import { AuditLogsService } from './audit-logs.service';
 export class AuditLogsController {
   constructor(private readonly auditLogsService: AuditLogsService) {}
 
+  // === get audit logs ===
   @Get()
   async findAll(@Query() query: AuditLogQueryDto) {
     const result = await this.auditLogsService.findAll(query);

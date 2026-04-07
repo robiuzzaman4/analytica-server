@@ -14,6 +14,7 @@ export interface CreateAuditLogInput {
 export class AuditLogsService {
   constructor(private readonly prismaService: PrismaService) {}
 
+  // === get audit logs ===
   findAll(query: AuditLogQueryDto) {
     return this.prismaService.auditLog.findMany({
       where: {
@@ -43,7 +44,9 @@ export class AuditLogsService {
     });
   }
 
+  // === create task log ===
   createTaskLog(input: CreateAuditLogInput) {
+    // === task logs always use the task target entity ===
     return this.prismaService.auditLog.create({
       data: {
         actorUserId: input.actorUserId,

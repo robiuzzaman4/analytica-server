@@ -11,6 +11,7 @@ import { sendResponse } from '../send-response';
 
 @Catch()
 export class ApiExceptionFilter implements ExceptionFilter {
+  // === normalize error response ===
   catch(exception: unknown, host: ArgumentsHost) {
     const response = host.switchToHttp().getResponse<Response>();
     const statusCode =
@@ -28,6 +29,7 @@ export class ApiExceptionFilter implements ExceptionFilter {
     response.status(statusCode).json(sendResponse(payload));
   }
 
+  // === resolve error message ===
   private getMessage(exception: unknown) {
     if (!(exception instanceof HttpException)) {
       return 'Internal server error';

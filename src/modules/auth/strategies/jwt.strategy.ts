@@ -7,6 +7,7 @@ import { AuthenticatedUser } from '../../../common/auth/interfaces/authenticated
 import { JwtPayload } from '../interfaces/jwt-payload.interface';
 
 function extractJwtFromCookie(request: Request): string | null {
+  // === extract jwt from cookie ===
   const cookieHeader = request.headers.cookie;
 
   if (!cookieHeader) {
@@ -31,6 +32,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(configService: ConfigService) {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
+        // === support bearer token and cookie auth ===
         ExtractJwt.fromAuthHeaderAsBearerToken(),
         extractJwtFromCookie,
       ]),
@@ -39,6 +41,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
+  // === map jwt payload to request user ===
   validate(payload: JwtPayload): AuthenticatedUser {
     return {
       id: payload.sub,

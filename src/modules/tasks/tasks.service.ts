@@ -33,7 +33,9 @@ export class TasksService {
     private readonly auditLogsService: AuditLogsService,
   ) {}
 
+  // === create task ===
   async create(actorUserId: string, createTaskDto: CreateTaskDto) {
+    // === validate assigned user before create ===
     await this.ensureAssignedUserExists(createTaskDto.assignedUserId);
 
     const createdTask = await this.prismaService.task.create({
@@ -46,6 +48,7 @@ export class TasksService {
       select: taskSelect,
     });
 
+    // === create audit logs for task creation and assignment ===
     await this.auditLogsService.createTaskLog({
       actorUserId,
       actionType: AuditActionType.TASK_CREATED,
@@ -65,6 +68,7 @@ export class TasksService {
     return createdTask;
   }
 
+  // === get all tasks ===
   findAll() {
     return this.prismaService.task.findMany({
       orderBy: { createdAt: 'desc' },
@@ -72,6 +76,7 @@ export class TasksService {
     });
   }
 
+  // === get my tasks ===
   findAssignedTasks(userId: string) {
     return this.prismaService.task.findMany({
       where: { assignedUserId: userId },
@@ -80,6 +85,7 @@ export class TasksService {
     });
   }
 
+  // === get task by id ===
   async findOne(id: string) {
     const task = await this.prismaService.task.findUnique({
       where: { id },
@@ -93,6 +99,7 @@ export class TasksService {
     return task;
   }
 
+  // === get my task by id ===
   async findAssignedTaskById(userId: string, id: string) {
     const task = await this.prismaService.task.findFirst({
       where: {
@@ -109,6 +116,7 @@ export class TasksService {
     return task;
   }
 
+  // === update task ===
   async update(actorUserId: string, id: string, updateTaskDto: UpdateTaskDto) {
     const existingTask = await this.findOne(id);
     await this.ensureAssignedUserExists(updateTaskDto.assignedUserId);
@@ -129,11 +137,13 @@ export class TasksService {
     return updatedTask;
   }
 
+  // === update my task status ===
   async updateAssignedTaskStatus(
     actorUserId: string,
     id: string,
     updateTaskStatusDto: UpdateTaskStatusDto,
   ) {
+    // === validate task ownership before status update ===
     const existingTask = await this.findAssignedTaskById(actorUserId, id);
 
     const updatedTask = await this.prismaService.task.update({
@@ -154,6 +164,7 @@ export class TasksService {
     return updatedTask;
   }
 
+  // === delete task ===
   async remove(actorUserId: string, id: string) {
     await this.findOne(id);
 
@@ -172,6 +183,7 @@ export class TasksService {
     return deletedTask;
   }
 
+  // === validate assigned user ===
   private async ensureAssignedUserExists(assignedUserId?: string | null) {
     if (!assignedUserId) {
       return;
@@ -194,6 +206,7 @@ export class TasksService {
     existingTask: TaskRecord,
     updatedTask: TaskRecord,
   ) {
+    // === create audit logs for admin task updates ===
     if (
       existingTask.title !== updatedTask.title ||
       existingTask.description !== updatedTask.description

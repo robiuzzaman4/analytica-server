@@ -5,6 +5,7 @@ import { PrismaService } from '../../common/prisma/prisma.service';
 export class UsersService {
   constructor(private readonly prismaService: PrismaService) {}
 
+  // === get all users ===
   findAll() {
     return this.prismaService.user.findMany({
       orderBy: { createdAt: 'desc' },

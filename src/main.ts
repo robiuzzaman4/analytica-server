@@ -11,6 +11,7 @@ import { configureApp } from './app.setup';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   configureApp(app);
+
   const configService = app.get(ConfigService);
   const port = configService.get<number>('PORT') || 5000;
   const prismaService = app.get(PrismaService);

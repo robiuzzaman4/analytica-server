@@ -25,6 +25,7 @@ import { TasksService } from './tasks.service';
 export class TasksController {
   constructor(private readonly tasksService: TasksService) {}
 
+  // === create task ===
   @Roles(Role.ADMIN)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Post()
@@ -42,6 +43,7 @@ export class TasksController {
     });
   }
 
+  // === get all tasks ===
   @Roles(Role.ADMIN)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get()
@@ -56,6 +58,7 @@ export class TasksController {
     });
   }
 
+  // === get my tasks ===
   @Roles(Role.USER)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('me')
@@ -70,6 +73,7 @@ export class TasksController {
     });
   }
 
+  // === get my task by id ===
   @Roles(Role.USER)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('me/:id')
@@ -87,6 +91,7 @@ export class TasksController {
     });
   }
 
+  // === update my task status ===
   @Roles(Role.USER)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Patch(':id/status')
@@ -109,6 +114,7 @@ export class TasksController {
     });
   }
 
+  // === get task by id ===
   @Roles(Role.ADMIN)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get(':id')
@@ -123,6 +129,7 @@ export class TasksController {
     });
   }
 
+  // === update task ===
   @Roles(Role.ADMIN)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Patch(':id')
@@ -141,6 +148,7 @@ export class TasksController {
     });
   }
 
+  // === delete task ===
   @Roles(Role.ADMIN)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Delete(':id')

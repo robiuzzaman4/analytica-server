@@ -61,6 +61,7 @@ export async function ensureDemoUsersSeeded(
   prisma: SeedPrismaClient,
   config: DemoUserSeedConfig,
 ) {
+  // === seed demo users ===
   const admin = await ensureDemoUser(prisma, {
     ...config.admin,
     role: Role.ADMIN,
@@ -105,6 +106,7 @@ async function ensureDemoUser(
     where: { email: input.email },
   });
 
+  // === reuse existing demo user ===
   if (existingUser) {
     return existingUser;
   }

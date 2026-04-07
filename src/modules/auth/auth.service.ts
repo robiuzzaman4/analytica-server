@@ -11,11 +11,13 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
+  // === login ===
   async login(email: string, password: string) {
     const user = await this.prismaService.user.findUnique({
       where: { email },
     });
 
+    // === keep auth failure response consistent ===
     const isPasswordValid = user
       ? await this.isPasswordValid(password, user.password)
       : false;
@@ -42,7 +44,9 @@ export class AuthService {
     };
   }
 
+  // === logout ===
   logout() {
+    // === logout response does not return extra data ===
     return null;
   }
 

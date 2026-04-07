@@ -21,6 +21,7 @@ import { AuthService } from './auth.service';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  // === login ===
   @HttpCode(HttpStatus.OK)
   @Post('login')
   async login(
@@ -32,6 +33,7 @@ export class AuthController {
       loginDto.password,
     );
 
+    // === set auth cookie for browser clients ===
     response.cookie('accessToken', result.accessToken, {
       httpOnly: true,
       sameSite: 'lax',
@@ -48,6 +50,7 @@ export class AuthController {
     });
   }
 
+  // === get profile ===
   @UseGuards(JwtAuthGuard)
   @Get('me')
   me(@CurrentUser() user: AuthenticatedUser | undefined) {
@@ -59,10 +62,12 @@ export class AuthController {
     });
   }
 
+  // === logout ===
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   @Post('logout')
   logout(@Res({ passthrough: true }) response) {
+    // === clear auth cookie for browser clients ===
     response.clearCookie('accessToken', {
       httpOnly: true,
       sameSite: 'lax',

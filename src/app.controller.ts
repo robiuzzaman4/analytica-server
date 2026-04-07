@@ -3,6 +3,7 @@ import { sendResponse } from './common/http/send-response';
 
 @Controller()
 export class AppController {
+  // === health check ===
   @Get('health')
   health() {
     return sendResponse({
