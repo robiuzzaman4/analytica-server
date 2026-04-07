@@ -45,6 +45,14 @@ For error responses, `success` is `false` and `data` is `null`.
 - `POST /auth/login`
 - `POST /auth/logout`
 - `GET /auth/me`
+  Notes:
+  - login returns the JWT in the response body
+  - login also sets an `accessToken` httpOnly cookie for browser clients
+  - protected routes accept either `Authorization: Bearer <token>` or the `accessToken` cookie
+
+### Health
+
+- `GET /health`
 
 ### Tasks
 
@@ -251,6 +259,11 @@ Run e2e tests:
 ```bash
 pnpm run test:e2e
 ```
+
+Current verified status:
+
+- `pnpm test` passes
+- `pnpm run test:e2e` passes
 
 Run lint:
 

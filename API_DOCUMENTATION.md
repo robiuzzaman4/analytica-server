@@ -51,11 +51,34 @@ Some endpoints are restricted by role. The role is included in the login respons
 ```
 
 - On errors, `success` is `false` and `data` is `null`.
+- `statusCode` in the body matches the actual HTTP status code.
 - Validation errors return `400 Bad Request`.
 - Invalid login returns `401 Unauthorized`.
 - Missing or invalid token returns `401 Unauthorized`.
 - Valid token with wrong role returns `403 Forbidden`.
 - When a resource is not found, the API returns `404 Not Found`.
+
+### Common Task Shape
+
+Task endpoints return this task object inside `data`:
+
+```json
+{
+  "id": "cm...",
+  "title": "Prepare report",
+  "description": "Prepare weekly analytics report",
+  "status": "PENDING",
+  "assignedUserId": "cm...",
+  "createdAt": "2026-04-07T10:00:00.000Z",
+  "updatedAt": "2026-04-07T10:00:00.000Z",
+  "assignedUser": {
+    "id": "cm...",
+    "name": "Regular User",
+    "email": "user@example.com",
+    "role": "USER"
+  }
+}
+```
 
 ## Health
 
@@ -96,7 +119,7 @@ Response:
 ```json
 {
   "success": true,
-  "message": "Login successful",
+  "message": "Login Successfully.",
   "data": {
     "accessToken": "<jwt-token>",
     "user": {
@@ -106,7 +129,7 @@ Response:
       "role": "ADMIN"
     }
   },
-  "statusCode": 201
+  "statusCode": 200
 }
 ```
 
@@ -123,7 +146,7 @@ Response:
 ```json
 {
   "success": true,
-  "message": "Authenticated user retrieved successfully",
+  "message": "Get Profile Successfully.",
   "data": {
     "id": "cm...",
     "name": "Admin User",
@@ -154,9 +177,9 @@ Response:
 ```json
 {
   "success": true,
-  "message": "Logged out successfully",
+  "message": "Logout Successfully.",
   "data": null,
-  "statusCode": 201
+  "statusCode": 200
 }
 ```
 
@@ -190,19 +213,24 @@ Response:
 
 ```json
 {
-  "id": "cm...",
-  "title": "Prepare report",
-  "description": "Prepare weekly analytics report",
-  "status": "PENDING",
-  "assignedUserId": "cm...",
-  "createdAt": "2026-04-07T10:00:00.000Z",
-  "updatedAt": "2026-04-07T10:00:00.000Z",
-  "assignedUser": {
+  "success": true,
+  "message": "Create Task Successfully.",
+  "data": {
     "id": "cm...",
-    "name": "Regular User",
-    "email": "user@example.com",
-    "role": "USER"
-  }
+    "title": "Prepare report",
+    "description": "Prepare weekly analytics report",
+    "status": "PENDING",
+    "assignedUserId": "cm...",
+    "createdAt": "2026-04-07T10:00:00.000Z",
+    "updatedAt": "2026-04-07T10:00:00.000Z",
+    "assignedUser": {
+      "id": "cm...",
+      "name": "Regular User",
+      "email": "user@example.com",
+      "role": "USER"
+    }
+  },
+  "statusCode": 201
 }
 ```
 
@@ -212,7 +240,31 @@ Get all tasks.
 
 Response:
 
-- Array of task objects
+```json
+{
+  "success": true,
+  "message": "Get All Tasks Successfully.",
+  "data": [
+    {
+      "id": "cm...",
+      "title": "Prepare report",
+      "description": "Prepare weekly analytics report",
+      "status": "PENDING",
+      "assignedUserId": "cm...",
+      "createdAt": "2026-04-07T10:00:00.000Z",
+      "updatedAt": "2026-04-07T10:00:00.000Z",
+      "assignedUser": {
+        "id": "cm...",
+        "name": "Regular User",
+        "email": "user@example.com",
+        "role": "USER"
+      }
+    }
+  ],
+  "statusCode": 200
+}
+```
+
 - Ordered by `createdAt` descending
 
 ### `GET /tasks/:id`
@@ -221,7 +273,28 @@ Get a single task by id.
 
 Response:
 
-- Same task object shape as `POST /tasks`
+```json
+{
+  "success": true,
+  "message": "Get Task Successfully.",
+  "data": {
+    "id": "cm...",
+    "title": "Prepare report",
+    "description": "Prepare weekly analytics report",
+    "status": "PENDING",
+    "assignedUserId": "cm...",
+    "createdAt": "2026-04-07T10:00:00.000Z",
+    "updatedAt": "2026-04-07T10:00:00.000Z",
+    "assignedUser": {
+      "id": "cm...",
+      "name": "Regular User",
+      "email": "user@example.com",
+      "role": "USER"
+    }
+  },
+  "statusCode": 200
+}
+```
 
 ### `PATCH /tasks/:id`
 
@@ -245,7 +318,28 @@ Notes:
 
 Response:
 
-- Same task object shape as `POST /tasks`
+```json
+{
+  "success": true,
+  "message": "Update Task Successfully.",
+  "data": {
+    "id": "cm...",
+    "title": "Updated title",
+    "description": "Updated description",
+    "status": "PROCESSING",
+    "assignedUserId": "cm...",
+    "createdAt": "2026-04-07T10:00:00.000Z",
+    "updatedAt": "2026-04-07T10:05:00.000Z",
+    "assignedUser": {
+      "id": "cm...",
+      "name": "Regular User",
+      "email": "user@example.com",
+      "role": "USER"
+    }
+  },
+  "statusCode": 200
+}
+```
 
 ### `DELETE /tasks/:id`
 
@@ -253,7 +347,28 @@ Delete a task.
 
 Response:
 
-- Returns the deleted task object
+```json
+{
+  "success": true,
+  "message": "Delete Task Successfully.",
+  "data": {
+    "id": "cm...",
+    "title": "Prepare report",
+    "description": "Prepare weekly analytics report",
+    "status": "PENDING",
+    "assignedUserId": "cm...",
+    "createdAt": "2026-04-07T10:00:00.000Z",
+    "updatedAt": "2026-04-07T10:00:00.000Z",
+    "assignedUser": {
+      "id": "cm...",
+      "name": "Regular User",
+      "email": "user@example.com",
+      "role": "USER"
+    }
+  },
+  "statusCode": 200
+}
+```
 
 ## User Task Endpoints
 
@@ -265,7 +380,31 @@ Get tasks assigned to the current user.
 
 Response:
 
-- Array of task objects
+```json
+{
+  "success": true,
+  "message": "Get My Tasks Successfully.",
+  "data": [
+    {
+      "id": "cm...",
+      "title": "Prepare report",
+      "description": "Prepare weekly analytics report",
+      "status": "PENDING",
+      "assignedUserId": "cm...",
+      "createdAt": "2026-04-07T10:00:00.000Z",
+      "updatedAt": "2026-04-07T10:00:00.000Z",
+      "assignedUser": {
+        "id": "cm...",
+        "name": "Regular User",
+        "email": "user@example.com",
+        "role": "USER"
+      }
+    }
+  ],
+  "statusCode": 200
+}
+```
+
 - Ordered by `createdAt` descending
 
 ### `GET /tasks/me/:id`
@@ -274,7 +413,28 @@ Get a single assigned task by id.
 
 Response:
 
-- Same task object shape as `POST /tasks`
+```json
+{
+  "success": true,
+  "message": "Get My Task Successfully.",
+  "data": {
+    "id": "cm...",
+    "title": "Prepare report",
+    "description": "Prepare weekly analytics report",
+    "status": "PENDING",
+    "assignedUserId": "cm...",
+    "createdAt": "2026-04-07T10:00:00.000Z",
+    "updatedAt": "2026-04-07T10:00:00.000Z",
+    "assignedUser": {
+      "id": "cm...",
+      "name": "Regular User",
+      "email": "user@example.com",
+      "role": "USER"
+    }
+  },
+  "statusCode": 200
+}
+```
 
 Important:
 
@@ -295,7 +455,28 @@ Request body:
 
 Response:
 
-- Same task object shape as `POST /tasks`
+```json
+{
+  "success": true,
+  "message": "Update Task Status Successfully.",
+  "data": {
+    "id": "cm...",
+    "title": "Prepare report",
+    "description": "Prepare weekly analytics report",
+    "status": "DONE",
+    "assignedUserId": "cm...",
+    "createdAt": "2026-04-07T10:00:00.000Z",
+    "updatedAt": "2026-04-07T10:05:00.000Z",
+    "assignedUser": {
+      "id": "cm...",
+      "name": "Regular User",
+      "email": "user@example.com",
+      "role": "USER"
+    }
+  },
+  "statusCode": 200
+}
+```
 
 Important:
 
@@ -316,16 +497,21 @@ Auth:
 Response:
 
 ```json
-[
-  {
-    "id": "cm...",
-    "name": "Admin User",
-    "email": "admin@example.com",
-    "role": "ADMIN",
-    "createdAt": "2026-04-07T10:00:00.000Z",
-    "updatedAt": "2026-04-07T10:00:00.000Z"
-  }
-]
+{
+  "success": true,
+  "message": "Get All Users Successfully.",
+  "data": [
+    {
+      "id": "cm...",
+      "name": "Admin User",
+      "email": "admin@example.com",
+      "role": "ADMIN",
+      "createdAt": "2026-04-07T10:00:00.000Z",
+      "updatedAt": "2026-04-07T10:00:00.000Z"
+    }
+  ],
+  "statusCode": 200
+}
 ```
 
 Note:
@@ -355,23 +541,28 @@ Example:
 Response:
 
 ```json
-[
-  {
-    "id": "cm...",
-    "actorUserId": "cm...",
-    "actionType": "TASK_CREATED",
-    "targetEntity": "TASK",
-    "targetEntityId": "cm...",
-    "summary": "Task \"Prepare report\" created",
-    "createdAt": "2026-04-07T10:00:00.000Z",
-    "actorUser": {
+{
+  "success": true,
+  "message": "Get Audit Logs Successfully.",
+  "data": [
+    {
       "id": "cm...",
-      "name": "Admin User",
-      "email": "admin@example.com",
-      "role": "ADMIN"
+      "actorUserId": "cm...",
+      "actionType": "TASK_CREATED",
+      "targetEntity": "TASK",
+      "targetEntityId": "cm...",
+      "summary": "Task \"Prepare report\" created",
+      "createdAt": "2026-04-07T10:00:00.000Z",
+      "actorUser": {
+        "id": "cm...",
+        "name": "Admin User",
+        "email": "admin@example.com",
+        "role": "ADMIN"
+      }
     }
-  }
-]
+  ],
+  "statusCode": 200
+}
 ```
 
 ## Demo Accounts
