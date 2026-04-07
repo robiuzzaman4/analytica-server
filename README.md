@@ -93,3 +93,6 @@ Start the backend in development mode:
 ```bash
 pnpm run start:dev
 ```
+
+
+UP TO STEP 5
