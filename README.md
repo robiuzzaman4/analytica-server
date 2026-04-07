@@ -1,98 +1,221 @@
 # Analytica Management Backend
 
-NestJS backend for the task management system described in `doc.md`.
+NestJS backend for a small task management system with JWT auth, role-based access control, task management, and audit logging.
 
-## Current Progress
+## Features
 
-- Step 1: infrastructure setup completed
-- Step 2: Prisma schema and initial migration added
-- Step 3: local seed support for demo users added
+- JWT login with predefined demo users
+- 2 roles: `ADMIN` and `USER`
+- Admin task CRUD
+- User-only assigned task views
+- User-only task status updates for owned tasks
+- Admin-only user listing
+- Admin-only audit log listing
+- Prisma ORM with PostgreSQL
+- Automatic demo-user seeding on server startup if users do not exist
+- CORS enabled for frontend integration
 
-## Requirements
+## Tech Stack
 
-- Node.js 20+
-- pnpm
-- local PostgreSQL
+- NestJS
+- TypeScript
+- PostgreSQL
+- Prisma
+- JWT auth
+- Bcrypt
 
-## Environment Setup
+## Implemented API
 
-1. Copy `.env.example` to `.env`
-2. Create a local PostgreSQL database named `analytica_task_management_db`
-3. Update DB credentials in `.env` if your local PostgreSQL uses different ones
+### Auth
 
-Example:
+- `POST /auth/login`
+- `GET /auth/me`
+
+### Tasks
+
+- `POST /tasks` - admin only
+- `GET /tasks` - admin only
+- `GET /tasks/:id` - admin only
+- `PATCH /tasks/:id` - admin only
+- `DELETE /tasks/:id` - admin only
+- `GET /tasks/me` - user only
+- `GET /tasks/me/:id` - user only
+- `PATCH /tasks/:id/status` - user only
+
+### Users
+
+- `GET /users` - admin only
+
+### Audit Logs
+
+- `GET /audit-logs` - admin only
+  Optional query params:
+  - `actionType`
+  - `targetEntityId`
+
+## Roles
+
+### Admin
+
+- Log in
+- View own profile
+- Create, update, assign, and delete tasks
+- View all tasks
+- View all users
+- View audit logs
+
+### User
+
+- Log in
+- View own profile
+- View only assigned tasks
+- Update only the status of assigned tasks
+
+## Demo Credentials
+
+These come from `.env` / `.env.example`.
+
+- Admin: `admin@analytica.local` / `Admin123!`
+- User: `user@analytica.local` / `User123!`
+
+## Environment
+
+Copy `.env.example` to `.env`.
 
 ```bash
 cp .env.example .env
 ```
 
-If you are on Windows PowerShell:
+PowerShell:
 
 ```powershell
 Copy-Item .env.example .env
 ```
 
-## Local Database
+Default local values:
 
-The local development database is expected to be:
-
-- database: `analytica_task_management_db`
-- user: `postgres`
-- password: `123456`
-
-If your local PostgreSQL credentials differ, update `DATABASE_URL` in `.env`.
-
-## Prisma Commands
-
-Validate the Prisma schema:
-
-```bash
-pnpm run prisma:validate
+```env
+PORT=3000
+DATABASE_URL="postgresql://postgres:123456@localhost:5432/analytica_task_management_db?schema=public"
+JWT_SECRET="change-me-later"
+DEMO_ADMIN_NAME="Admin User"
+DEMO_ADMIN_EMAIL="admin@analytica.local"
+DEMO_ADMIN_PASSWORD="Admin123!"
+DEMO_USER_NAME="Normal User"
+DEMO_USER_EMAIL="user@analytica.local"
+DEMO_USER_PASSWORD="User123!"
 ```
 
-Generate the Prisma client:
+## Run Locally
 
-```bash
-pnpm run prisma:generate
-```
+### Option 1: Local PostgreSQL
 
-Run the Prisma seed:
-
-```bash
-pnpm run db:seed
-```
-
-## Demo Credentials
-
-The seed uses values from `.env`:
-
-- `DEMO_ADMIN_NAME`
-- `DEMO_ADMIN_EMAIL`
-- `DEMO_ADMIN_PASSWORD`
-- `DEMO_USER_NAME`
-- `DEMO_USER_EMAIL`
-- `DEMO_USER_PASSWORD`
-
-Default local demo accounts:
-
-- admin: `admin@analytica.local` / `Admin123!`
-- user: `user@analytica.local` / `User123!`
-
-Passwords are hashed before being stored in the database.
-
-## Run The App
-
-Install dependencies:
+1. Install dependencies
 
 ```bash
 pnpm install
 ```
 
-Start the backend in development mode:
+2. Make sure PostgreSQL is running and create a database named `analytica_task_management_db`
+
+3. Copy `.env.example` to `.env` and adjust `DATABASE_URL` if needed
+
+4. Generate Prisma client
+
+```bash
+pnpm run prisma:generate
+```
+
+5. Apply database migrations
+
+```bash
+pnpm exec prisma migrate dev
+```
+
+6. Start the app
 
 ```bash
 pnpm run start:dev
 ```
 
+The server will:
 
-UP TO STEP 5
+- start on the configured `PORT`
+- enable CORS
+- auto-create the demo admin/user if they do not already exist
+
+### Option 2: Docker Compose
+
+```bash
+docker compose up --build
+```
+
+This starts:
+
+- PostgreSQL on `localhost:5432`
+- the NestJS app on `localhost:3000`
+
+Note:
+
+- if you run with Docker, the compose file overrides `DATABASE_URL` for the app container
+- depending on your workflow, you may still want to run migrations before first use if your database is empty
+
+## Prisma / Seed Commands
+
+Generate Prisma client:
+
+```bash
+pnpm run prisma:generate
+```
+
+Validate Prisma schema:
+
+```bash
+pnpm run prisma:validate
+```
+
+Run seed manually:
+
+```bash
+pnpm run db:seed
+```
+
+## Testing
+
+Run unit tests:
+
+```bash
+pnpm test
+```
+
+Run lint:
+
+```bash
+pnpm run lint
+```
+
+## Project Structure
+
+```text
+src/
+  common/
+    auth/
+    config/
+    prisma/
+    seed/
+  modules/
+    auth/
+    tasks/
+    users/
+    audit-logs/
+prisma/
+  schema.prisma
+  migrations/
+  seed.ts
+```
+
+## Notes
+
+- Passwords are hashed with `bcrypt`
+- Audit logs store actor, action type, target, summary, and timestamp
+- Demo users are not recreated on every startup; only missing users are inserted
