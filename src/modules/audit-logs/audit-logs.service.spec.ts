@@ -7,6 +7,7 @@ describe('AuditLogsService', () => {
   let prismaService: {
     auditLog: {
       create: jest.Mock;
+      findMany: jest.Mock;
     };
   };
 
@@ -14,6 +15,7 @@ describe('AuditLogsService', () => {
     prismaService = {
       auditLog: {
         create: jest.fn(),
+        findMany: jest.fn(),
       },
     };
 
@@ -41,6 +43,44 @@ describe('AuditLogsService', () => {
         targetEntity: 'TASK',
         targetEntityId: 'task_1',
         summary: 'Task created',
+      },
+    });
+  });
+
+  it('lists audit logs newest first with optional filters', async () => {
+    prismaService.auditLog.findMany.mockResolvedValue([{ id: 'audit_1' }]);
+
+    await expect(
+      auditLogsService.findAll({
+        actionType: AuditActionType.TASK_ASSIGNED,
+        targetEntityId: 'task_1',
+      }),
+    ).resolves.toEqual([{ id: 'audit_1' }]);
+
+    expect(prismaService.auditLog.findMany).toHaveBeenCalledWith({
+      where: {
+        actionType: AuditActionType.TASK_ASSIGNED,
+        targetEntityId: 'task_1',
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+      select: {
+        id: true,
+        actorUserId: true,
+        actionType: true,
+        targetEntity: true,
+        targetEntityId: true,
+        summary: true,
+        createdAt: true,
+        actorUser: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
+          },
+        },
       },
     });
   });
