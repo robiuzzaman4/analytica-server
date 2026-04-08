@@ -2,6 +2,7 @@ import { Role, TaskStatus } from '@prisma/client';
 import { ROLES_KEY } from '../../common/auth/decorators/roles.decorator';
 import { AuthenticatedUser } from '../../common/auth/interfaces/authenticated-user.interface';
 import { CreateTaskDto } from './dto/create-task.dto';
+import { TasksQueryDto } from './dto/tasks-query.dto';
 import { UpdateTaskStatusDto } from './dto/update-task-status.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { TasksController } from './tasks.controller';
@@ -75,15 +76,36 @@ describe('TasksController', () => {
   });
 
   it('delegates listing to the service', async () => {
-    tasksService.findAll.mockResolvedValue([{ id: 'task_1' }]);
+    const query: TasksQueryDto = {
+      page: 2,
+      limit: 10,
+    };
 
-    await expect(tasksController.findAll()).resolves.toEqual({
+    tasksService.findAll.mockResolvedValue({
+      items: [{ id: 'task_1' }],
+      pagination: {
+        page: 2,
+        limit: 10,
+        totalItems: 1,
+        totalPages: 1,
+      },
+    });
+
+    await expect(tasksController.findAll(query)).resolves.toEqual({
       statusCode: 200,
       success: true,
       message: 'Get All Tasks Successfully.',
-      data: [{ id: 'task_1' }],
+      data: {
+        items: [{ id: 'task_1' }],
+        pagination: {
+          page: 2,
+          limit: 10,
+          totalItems: 1,
+          totalPages: 1,
+        },
+      },
     });
-    expect(tasksService.findAll).toHaveBeenCalled();
+    expect(tasksService.findAll).toHaveBeenCalledWith(query);
   });
 
   it('marks current-user task listing as user-only', () => {
@@ -104,17 +126,40 @@ describe('TasksController', () => {
       email: 'user@analytica.local',
       role: Role.USER,
     };
+    const query: TasksQueryDto = {
+      page: 3,
+      limit: 5,
+    };
 
-    tasksService.findAssignedTasks.mockResolvedValue([{ id: 'task_1' }]);
+    tasksService.findAssignedTasks.mockResolvedValue({
+      items: [{ id: 'task_1' }],
+      pagination: {
+        page: 3,
+        limit: 5,
+        totalItems: 1,
+        totalPages: 1,
+      },
+    });
 
-    await expect(tasksController.findMyTasks(user)).resolves.toEqual({
+    await expect(tasksController.findMyTasks(user, query)).resolves.toEqual({
       statusCode: 200,
       success: true,
       message: 'Get My Tasks Successfully.',
-      data: [{ id: 'task_1' }],
+      data: {
+        items: [{ id: 'task_1' }],
+        pagination: {
+          page: 3,
+          limit: 5,
+          totalItems: 1,
+          totalPages: 1,
+        },
+      },
     });
 
-    expect(tasksService.findAssignedTasks).toHaveBeenCalledWith('user_1');
+    expect(tasksService.findAssignedTasks).toHaveBeenCalledWith(
+      'user_1',
+      query,
+    );
   });
 
   it('returns a single assigned task for the authenticated user', async () => {

@@ -19,33 +19,54 @@ export class AuditLogsService {
   constructor(private readonly prismaService: PrismaService) {}
 
   // === get audit logs ===
-  findAll(query: AuditLogQueryDto) {
-    return this.prismaService.auditLog.findMany({
-      where: {
-        actionType: query.actionType,
-        targetEntityId: query.targetEntityId,
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-      select: {
-        id: true,
-        actorUserId: true,
-        actionType: true,
-        targetEntity: true,
-        targetEntityId: true,
-        summary: true,
-        createdAt: true,
-        actorUser: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            role: true,
+  async findAll(query: Partial<AuditLogQueryDto> = {}) {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 20;
+    const skip = (page - 1) * limit;
+
+    const where = {
+      actionType: query.actionType,
+      targetEntityId: query.targetEntityId,
+    };
+
+    const [totalItems, items] = await Promise.all([
+      this.prismaService.auditLog.count({ where }),
+      this.prismaService.auditLog.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: {
+          createdAt: 'desc',
+        },
+        select: {
+          id: true,
+          actorUserId: true,
+          actionType: true,
+          targetEntity: true,
+          targetEntityId: true,
+          summary: true,
+          createdAt: true,
+          actorUser: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              role: true,
+            },
           },
         },
+      }),
+    ]);
+
+    return {
+      items,
+      pagination: {
+        page,
+        limit,
+        totalItems,
+        totalPages: totalItems === 0 ? 0 : Math.ceil(totalItems / limit),
       },
-    });
+    };
   }
 
   // === create task log ===

@@ -3,6 +3,7 @@ import { AuditActionType, Prisma, TaskStatus } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { AuditLogsService } from '../audit-logs/audit-logs.service';
 import { CreateTaskDto } from './dto/create-task.dto';
+import { TasksQueryDto } from './dto/tasks-query.dto';
 import { UpdateTaskStatusDto } from './dto/update-task-status.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 
@@ -80,20 +81,59 @@ export class TasksService {
   }
 
   // === get all tasks ===
-  findAll() {
-    return this.prismaService.task.findMany({
-      orderBy: { createdAt: 'desc' },
-      select: taskSelect,
-    });
+  async findAll(query: Partial<TasksQueryDto> = {}) {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 20;
+    const skip = (page - 1) * limit;
+
+    const [totalItems, items] = await Promise.all([
+      this.prismaService.task.count(),
+      this.prismaService.task.findMany({
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        select: taskSelect,
+      }),
+    ]);
+
+    return {
+      items,
+      pagination: {
+        page,
+        limit,
+        totalItems,
+        totalPages: totalItems === 0 ? 0 : Math.ceil(totalItems / limit),
+      },
+    };
   }
 
   // === get my tasks ===
-  findAssignedTasks(userId: string) {
-    return this.prismaService.task.findMany({
-      where: { assignedUserId: userId },
-      orderBy: { createdAt: 'desc' },
-      select: taskSelect,
-    });
+  async findAssignedTasks(userId: string, query: Partial<TasksQueryDto> = {}) {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 20;
+    const skip = (page - 1) * limit;
+    const where = { assignedUserId: userId };
+
+    const [totalItems, items] = await Promise.all([
+      this.prismaService.task.count({ where }),
+      this.prismaService.task.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        select: taskSelect,
+      }),
+    ]);
+
+    return {
+      items,
+      pagination: {
+        page,
+        limit,
+        totalItems,
+        totalPages: totalItems === 0 ? 0 : Math.ceil(totalItems / limit),
+      },
+    };
   }
 
   // === get task by id ===

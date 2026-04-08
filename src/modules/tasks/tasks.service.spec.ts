@@ -10,6 +10,7 @@ describe('TasksService', () => {
     $transaction: jest.Mock;
     task: {
       create: jest.Mock;
+      count: jest.Mock;
       findMany: jest.Mock;
       findFirst: jest.Mock;
       findUnique: jest.Mock;
@@ -29,6 +30,7 @@ describe('TasksService', () => {
       $transaction: jest.fn(),
       task: {
         create: jest.fn(),
+        count: jest.fn(),
         findMany: jest.fn(),
         findFirst: jest.fn(),
         findUnique: jest.fn(),
@@ -120,12 +122,24 @@ describe('TasksService', () => {
   });
 
   it('lists tasks newest first', async () => {
+    prismaService.task.count.mockResolvedValue(1);
     prismaService.task.findMany.mockResolvedValue([{ id: 'task_1' }]);
 
-    await expect(tasksService.findAll()).resolves.toEqual([{ id: 'task_1' }]);
+    await expect(tasksService.findAll()).resolves.toEqual({
+      items: [{ id: 'task_1' }],
+      pagination: {
+        page: 1,
+        limit: 20,
+        totalItems: 1,
+        totalPages: 1,
+      },
+    });
 
+    expect(prismaService.task.count).toHaveBeenCalledWith();
     expect(prismaService.task.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
+        skip: 0,
+        take: 20,
         orderBy: { createdAt: 'desc' },
       }),
     );
@@ -148,15 +162,27 @@ describe('TasksService', () => {
   });
 
   it('lists only tasks assigned to the requested user', async () => {
+    prismaService.task.count.mockResolvedValue(1);
     prismaService.task.findMany.mockResolvedValue([{ id: 'task_1' }]);
 
-    await expect(tasksService.findAssignedTasks('user_1')).resolves.toEqual([
-      { id: 'task_1' },
-    ]);
+    await expect(tasksService.findAssignedTasks('user_1')).resolves.toEqual({
+      items: [{ id: 'task_1' }],
+      pagination: {
+        page: 1,
+        limit: 20,
+        totalItems: 1,
+        totalPages: 1,
+      },
+    });
 
+    expect(prismaService.task.count).toHaveBeenCalledWith({
+      where: { assignedUserId: 'user_1' },
+    });
     expect(prismaService.task.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: { assignedUserId: 'user_1' },
+        skip: 0,
+        take: 20,
         orderBy: { createdAt: 'desc' },
       }),
     );

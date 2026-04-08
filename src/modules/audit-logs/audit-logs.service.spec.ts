@@ -7,6 +7,7 @@ describe('AuditLogsService', () => {
   let prismaService: {
     auditLog: {
       create: jest.Mock;
+      count: jest.Mock;
       findMany: jest.Mock;
     };
   };
@@ -15,6 +16,7 @@ describe('AuditLogsService', () => {
     prismaService = {
       auditLog: {
         create: jest.fn(),
+        count: jest.fn(),
         findMany: jest.fn(),
       },
     };
@@ -48,6 +50,7 @@ describe('AuditLogsService', () => {
   });
 
   it('lists audit logs newest first with optional filters', async () => {
+    prismaService.auditLog.count.mockResolvedValue(1);
     prismaService.auditLog.findMany.mockResolvedValue([{ id: 'audit_1' }]);
 
     await expect(
@@ -55,13 +58,29 @@ describe('AuditLogsService', () => {
         actionType: AuditActionType.TASK_ASSIGNED,
         targetEntityId: 'task_1',
       }),
-    ).resolves.toEqual([{ id: 'audit_1' }]);
+    ).resolves.toEqual({
+      items: [{ id: 'audit_1' }],
+      pagination: {
+        page: 1,
+        limit: 20,
+        totalItems: 1,
+        totalPages: 1,
+      },
+    });
 
+    expect(prismaService.auditLog.count).toHaveBeenCalledWith({
+      where: {
+        actionType: AuditActionType.TASK_ASSIGNED,
+        targetEntityId: 'task_1',
+      },
+    });
     expect(prismaService.auditLog.findMany).toHaveBeenCalledWith({
       where: {
         actionType: AuditActionType.TASK_ASSIGNED,
         targetEntityId: 'task_1',
       },
+      skip: 0,
+      take: 20,
       orderBy: {
         createdAt: 'desc',
       },

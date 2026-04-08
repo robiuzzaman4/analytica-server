@@ -30,15 +30,33 @@ describe('AuditLogsController', () => {
     const query: AuditLogQueryDto = {
       actionType: AuditActionType.TASK_STATUS_CHANGED,
       targetEntityId: 'task_1',
+      page: 3,
+      limit: 5,
     };
 
-    auditLogsService.findAll.mockResolvedValue([{ id: 'audit_1' }]);
+    auditLogsService.findAll.mockResolvedValue({
+      items: [{ id: 'audit_1' }],
+      pagination: {
+        page: 3,
+        limit: 5,
+        totalItems: 1,
+        totalPages: 1,
+      },
+    });
 
     await expect(auditLogsController.findAll(query)).resolves.toEqual({
       statusCode: 200,
       success: true,
       message: 'Get Audit Logs Successfully.',
-      data: [{ id: 'audit_1' }],
+      data: {
+        items: [{ id: 'audit_1' }],
+        pagination: {
+          page: 3,
+          limit: 5,
+          totalItems: 1,
+          totalPages: 1,
+        },
+      },
     });
 
     expect(auditLogsService.findAll).toHaveBeenCalledWith(query);

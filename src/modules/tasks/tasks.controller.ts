@@ -7,6 +7,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { Role } from '@prisma/client';
@@ -17,6 +18,7 @@ import { AuthenticatedUser } from '../../common/auth/interfaces/authenticated-us
 import { sendResponse } from '../../common/http/send-response';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CreateTaskDto } from './dto/create-task.dto';
+import { TasksQueryDto } from './dto/tasks-query.dto';
 import { UpdateTaskStatusDto } from './dto/update-task-status.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { TasksService } from './tasks.service';
@@ -47,8 +49,8 @@ export class TasksController {
   @Roles(Role.ADMIN)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get()
-  async findAll() {
-    const result = await this.tasksService.findAll();
+  async findAll(@Query() query: TasksQueryDto) {
+    const result = await this.tasksService.findAll(query);
 
     return sendResponse({
       statusCode: HttpStatus.OK,
@@ -62,8 +64,11 @@ export class TasksController {
   @Roles(Role.USER)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('me')
-  async findMyTasks(@CurrentUser() user: AuthenticatedUser | undefined) {
-    const result = await this.tasksService.findAssignedTasks(user!.id);
+  async findMyTasks(
+    @CurrentUser() user: AuthenticatedUser | undefined,
+    @Query() query: TasksQueryDto,
+  ) {
+    const result = await this.tasksService.findAssignedTasks(user!.id, query);
 
     return sendResponse({
       statusCode: HttpStatus.OK,

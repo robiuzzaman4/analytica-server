@@ -238,34 +238,52 @@ Response:
 
 Get all tasks.
 
+Query params:
+
+- `page` optional, default `1`
+- `limit` optional, default `20`
+
+Example:
+
+- `/tasks?page=1&limit=20`
+
 Response:
 
 ```json
 {
   "success": true,
   "message": "Get All Tasks Successfully.",
-  "data": [
-    {
-      "id": "cm...",
-      "title": "Prepare report",
-      "description": "Prepare weekly analytics report",
-      "status": "PENDING",
-      "assignedUserId": "cm...",
-      "createdAt": "2026-04-07T10:00:00.000Z",
-      "updatedAt": "2026-04-07T10:00:00.000Z",
-      "assignedUser": {
+  "data": {
+    "items": [
+      {
         "id": "cm...",
-        "name": "Regular User",
-        "email": "user@example.com",
-        "role": "USER"
+        "title": "Prepare report",
+        "description": "Prepare weekly analytics report",
+        "status": "PENDING",
+        "assignedUserId": "cm...",
+        "createdAt": "2026-04-07T10:00:00.000Z",
+        "updatedAt": "2026-04-07T10:00:00.000Z",
+        "assignedUser": {
+          "id": "cm...",
+          "name": "Regular User",
+          "email": "user@example.com",
+          "role": "USER"
+        }
       }
+    ],
+    "pagination": {
+      "page": 1,
+      "limit": 20,
+      "totalItems": 42,
+      "totalPages": 3
     }
-  ],
+  },
   "statusCode": 200
 }
 ```
 
 - Ordered by `createdAt` descending
+- Uses offset-based pagination with `skip = (page - 1) * limit`
 
 ### `GET /tasks/:id`
 
@@ -378,34 +396,52 @@ These endpoints require `USER` role.
 
 Get tasks assigned to the current user.
 
+Query params:
+
+- `page` optional, default `1`
+- `limit` optional, default `20`
+
+Example:
+
+- `/tasks/me?page=1&limit=20`
+
 Response:
 
 ```json
 {
   "success": true,
   "message": "Get My Tasks Successfully.",
-  "data": [
-    {
-      "id": "cm...",
-      "title": "Prepare report",
-      "description": "Prepare weekly analytics report",
-      "status": "PENDING",
-      "assignedUserId": "cm...",
-      "createdAt": "2026-04-07T10:00:00.000Z",
-      "updatedAt": "2026-04-07T10:00:00.000Z",
-      "assignedUser": {
+  "data": {
+    "items": [
+      {
         "id": "cm...",
-        "name": "Regular User",
-        "email": "user@example.com",
-        "role": "USER"
+        "title": "Prepare report",
+        "description": "Prepare weekly analytics report",
+        "status": "PENDING",
+        "assignedUserId": "cm...",
+        "createdAt": "2026-04-07T10:00:00.000Z",
+        "updatedAt": "2026-04-07T10:00:00.000Z",
+        "assignedUser": {
+          "id": "cm...",
+          "name": "Regular User",
+          "email": "user@example.com",
+          "role": "USER"
+        }
       }
+    ],
+    "pagination": {
+      "page": 1,
+      "limit": 20,
+      "totalItems": 42,
+      "totalPages": 3
     }
-  ],
+  },
   "statusCode": 200
 }
 ```
 
 - Ordered by `createdAt` descending
+- Uses offset-based pagination with `skip = (page - 1) * limit`
 
 ### `GET /tasks/me/:id`
 
@@ -532,11 +568,14 @@ Query params:
 
 - `actionType` optional
 - `targetEntityId` optional
+- `page` optional, default `1`
+- `limit` optional, default `20`
 
 Example:
 
 - `/audit-logs?actionType=TASK_CREATED`
 - `/audit-logs?targetEntityId=cm123`
+- `/audit-logs?page=1&limit=20`
 
 Response:
 
@@ -544,26 +583,37 @@ Response:
 {
   "success": true,
   "message": "Get Audit Logs Successfully.",
-  "data": [
-    {
-      "id": "cm...",
-      "actorUserId": "cm...",
-      "actionType": "TASK_CREATED",
-      "targetEntity": "TASK",
-      "targetEntityId": "cm...",
-      "summary": "Task \"Prepare report\" created",
-      "createdAt": "2026-04-07T10:00:00.000Z",
-      "actorUser": {
+  "data": {
+    "items": [
+      {
         "id": "cm...",
-        "name": "Admin User",
-        "email": "admin@example.com",
-        "role": "ADMIN"
+        "actorUserId": "cm...",
+        "actionType": "TASK_CREATED",
+        "targetEntity": "TASK",
+        "targetEntityId": "cm...",
+        "summary": "Task \"Prepare report\" created",
+        "createdAt": "2026-04-07T10:00:00.000Z",
+        "actorUser": {
+          "id": "cm...",
+          "name": "Admin User",
+          "email": "admin@example.com",
+          "role": "ADMIN"
+        }
       }
+    ],
+    "pagination": {
+      "page": 1,
+      "limit": 20,
+      "totalItems": 42,
+      "totalPages": 3
     }
-  ],
+  },
   "statusCode": 200
 }
 ```
+
+- Ordered by `createdAt` descending
+- Uses offset-based pagination with `skip = (page - 1) * limit`
 
 ## Demo Accounts
 
