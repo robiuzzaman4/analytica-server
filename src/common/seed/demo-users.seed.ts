@@ -1,4 +1,4 @@
-import { hash } from 'bcrypt';
+import { hash } from 'bcryptjs';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient, Role } from '@prisma/client';
 import { Pool } from 'pg';
@@ -11,6 +11,11 @@ export interface DemoUserSeedConfig {
     password: string;
   };
   user: {
+    name: string;
+    email: string;
+    password: string;
+  };
+  userTwo: {
     name: string;
     email: string;
     password: string;
@@ -54,6 +59,11 @@ export function getDemoUserSeedConfig(env = process.env): DemoUserSeedConfig {
       email: validatedEnv.DEMO_USER_EMAIL,
       password: validatedEnv.DEMO_USER_PASSWORD,
     },
+    userTwo: {
+      name: validatedEnv.DEMO_USER_TWO_NAME,
+      email: validatedEnv.DEMO_USER_TWO_EMAIL,
+      password: validatedEnv.DEMO_USER_TWO_PASSWORD,
+    },
   };
 }
 
@@ -70,8 +80,12 @@ export async function ensureDemoUsersSeeded(
     ...config.user,
     role: Role.USER,
   });
+  const userTwo = await ensureDemoUser(prisma, {
+    ...config.userTwo,
+    role: Role.USER,
+  });
 
-  return { admin, user };
+  return { admin, user, userTwo };
 }
 
 export async function runSeedFromEnvironment(env = process.env) {
@@ -85,7 +99,7 @@ export async function runSeedFromEnvironment(env = process.env) {
     const result = await ensureDemoUsersSeeded(prisma, config);
 
     console.log(
-      `Seeded demo users: ${result.admin.email}, ${result.user.email}`,
+      `Seeded demo users: ${result.admin.email}, ${result.user.email}, ${result.userTwo.email}`,
     );
   } finally {
     await prisma.$disconnect();

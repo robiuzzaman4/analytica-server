@@ -1,4 +1,4 @@
-import { hash } from 'bcrypt';
+import { hash } from 'bcryptjs';
 import { UnauthorizedException } from '@nestjs/common';
 import { Role } from '@prisma/client';
 import { JwtService } from '@nestjs/jwt';

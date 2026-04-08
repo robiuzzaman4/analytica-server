@@ -1,9 +1,10 @@
-import { Controller, Get, HttpStatus, UseGuards } from '@nestjs/common';
+import { Controller, Get, HttpStatus, Query, UseGuards } from '@nestjs/common';
 import { Role } from '@prisma/client';
 import { Roles } from '../../common/auth/decorators/roles.decorator';
 import { RolesGuard } from '../../common/auth/guards/roles.guard';
 import { sendResponse } from '../../common/http/send-response';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { UsersQueryDto } from './dto/users-query.dto';
 import { UsersService } from './users.service';
 
 // === get all users ===
@@ -15,8 +16,8 @@ export class UsersController {
 
   // === get all users ===
   @Get()
-  async findAll() {
-    const result = await this.usersService.findAll();
+  async findAll(@Query() query: UsersQueryDto) {
+    const result = await this.usersService.findAll(query);
 
     return sendResponse({
       statusCode: HttpStatus.OK,

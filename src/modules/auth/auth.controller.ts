@@ -63,7 +63,6 @@ export class AuthController {
   }
 
   // === logout ===
-  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   @Post('logout')
   logout(@Res({ passthrough: true }) response) {

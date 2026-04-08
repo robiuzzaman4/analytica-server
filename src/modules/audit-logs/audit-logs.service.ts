@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { AuditActionType } from '@prisma/client';
+import { AuditActionType, Prisma } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { AuditLogQueryDto } from './dto/audit-log-query.dto';
 
@@ -9,6 +9,10 @@ export interface CreateAuditLogInput {
   targetEntityId: string;
   summary: string;
 }
+
+type AuditLogWriter =
+  | Pick<PrismaService, 'auditLog'>
+  | Prisma.TransactionClient;
 
 @Injectable()
 export class AuditLogsService {
@@ -45,9 +49,12 @@ export class AuditLogsService {
   }
 
   // === create task log ===
-  createTaskLog(input: CreateAuditLogInput) {
+  createTaskLog(
+    input: CreateAuditLogInput,
+    writer: AuditLogWriter = this.prismaService,
+  ) {
     // === task logs always use the task target entity ===
-    return this.prismaService.auditLog.create({
+    return writer.auditLog.create({
       data: {
         actorUserId: input.actorUserId,
         actionType: input.actionType,

@@ -99,7 +99,8 @@ For error responses, `success` is `false` and `data` is `null`.
 These come from `.env` / `.env.example`.
 
 - Admin: `admin@analytica.local` / `Admin123!`
-- User: `user@analytica.local` / `User123!`
+- User 1: `user@analytica.local` / `User123!`
+- User 2: `other@analytica.local` / `Other123!`
 
 ## Environment
 
@@ -131,6 +132,9 @@ DEMO_ADMIN_PASSWORD="Admin123!"
 DEMO_USER_NAME="Normal User"
 DEMO_USER_EMAIL="user@analytica.local"
 DEMO_USER_PASSWORD="User123!"
+DEMO_USER_TWO_NAME="Other User"
+DEMO_USER_TWO_EMAIL="other@analytica.local"
+DEMO_USER_TWO_PASSWORD="Other123!"
 ```
 
 ## Run Locally
@@ -169,7 +173,7 @@ The server will:
 
 - start on the configured `PORT`
 - enable CORS
-- auto-create the demo admin/user if they do not already exist
+- auto-create the demo admin and both demo users if they do not already exist
 
 ### Option 2: Docker Compose
 
@@ -225,6 +229,9 @@ For production deployment, provide these env vars at minimum:
 - `DEMO_USER_NAME`
 - `DEMO_USER_EMAIL`
 - `DEMO_USER_PASSWORD`
+- `DEMO_USER_TWO_NAME`
+- `DEMO_USER_TWO_EMAIL`
+- `DEMO_USER_TWO_PASSWORD`
 
 ## Prisma / Seed Commands
 

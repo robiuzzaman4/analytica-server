@@ -573,6 +573,8 @@ The app seeds demo users on startup if they do not already exist. Actual values 
 - `DEMO_ADMIN_PASSWORD`
 - `DEMO_USER_EMAIL`
 - `DEMO_USER_PASSWORD`
+- `DEMO_USER_TWO_EMAIL`
+- `DEMO_USER_TWO_PASSWORD`
 
 Frontend developers can use those credentials for local testing.
 

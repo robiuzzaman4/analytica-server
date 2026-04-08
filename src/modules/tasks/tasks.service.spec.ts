@@ -7,6 +7,7 @@ import { TasksService } from './tasks.service';
 describe('TasksService', () => {
   let tasksService: TasksService;
   let prismaService: {
+    $transaction: jest.Mock;
     task: {
       create: jest.Mock;
       findMany: jest.Mock;
@@ -25,6 +26,7 @@ describe('TasksService', () => {
 
   beforeEach(() => {
     prismaService = {
+      $transaction: jest.fn(),
       task: {
         create: jest.fn(),
         findMany: jest.fn(),
@@ -37,6 +39,11 @@ describe('TasksService', () => {
         findUnique: jest.fn(),
       },
     };
+
+    prismaService.$transaction.mockImplementation(
+      async (callback: (tx: typeof prismaService) => Promise<unknown>) =>
+        callback(prismaService),
+    );
 
     auditLogsService = {
       createTaskLog: jest.fn().mockResolvedValue({ id: 'audit_1' }),
@@ -96,6 +103,7 @@ describe('TasksService', () => {
         actionType: AuditActionType.TASK_CREATED,
         targetEntityId: 'task_1',
       }),
+      expect.anything(),
     );
   });
 
@@ -197,6 +205,7 @@ describe('TasksService', () => {
     });
     prismaService.task.update.mockResolvedValue({
       id: 'task_1',
+      title: 'Prepare release notes',
       status: TaskStatus.DONE,
     });
 
@@ -204,10 +213,12 @@ describe('TasksService', () => {
       tasksService.updateAssignedTaskStatus('user_1', 'task_1', {
         status: TaskStatus.DONE,
       }),
-    ).resolves.toEqual({
-      id: 'task_1',
-      status: TaskStatus.DONE,
-    });
+    ).resolves.toEqual(
+      expect.objectContaining({
+        id: 'task_1',
+        status: TaskStatus.DONE,
+      }),
+    );
 
     const [updateCall] = prismaService.task.update.mock.calls as [
       [
@@ -230,6 +241,7 @@ describe('TasksService', () => {
         actionType: AuditActionType.TASK_STATUS_CHANGED,
         targetEntityId: 'task_1',
       }),
+      expect.anything(),
     );
   });
 
@@ -260,14 +272,32 @@ describe('TasksService', () => {
       },
     });
     prismaService.user.findUnique.mockResolvedValue({ id: 'user_2' });
-    prismaService.task.update.mockResolvedValue({ id: 'task_1' });
+    prismaService.task.update.mockResolvedValue({
+      id: 'task_1',
+      title: 'Prepare release notes',
+      description: 'Summarize changes',
+      status: TaskStatus.DONE,
+      assignedUserId: 'user_2',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      assignedUser: {
+        id: 'user_2',
+        name: 'Demo User 2',
+        email: 'user2@analytica.local',
+        role: Role.USER,
+      },
+    });
 
     await expect(
       tasksService.update('admin_1', 'task_1', {
         status: TaskStatus.DONE,
         assignedUserId: 'user_2',
       }),
-    ).resolves.toEqual({ id: 'task_1' });
+    ).resolves.toEqual(
+      expect.objectContaining({
+        id: 'task_1',
+      }),
+    );
 
     const [updateCall] = prismaService.task.update.mock.calls as [
       [
@@ -296,6 +326,7 @@ describe('TasksService', () => {
         actionType: AuditActionType.TASK_ASSIGNED,
         targetEntityId: 'task_1',
       }),
+      expect.anything(),
     );
     expect(auditLogsService.createTaskLog).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -303,6 +334,7 @@ describe('TasksService', () => {
         actionType: AuditActionType.TASK_STATUS_CHANGED,
         targetEntityId: 'task_1',
       }),
+      expect.anything(),
     );
   });
 
@@ -337,11 +369,22 @@ describe('TasksService', () => {
       updatedAt: new Date(),
       assignedUser: null,
     });
-    prismaService.task.delete.mockResolvedValue({ id: 'task_1' });
-
-    await expect(tasksService.remove('admin_1', 'task_1')).resolves.toEqual({
+    prismaService.task.delete.mockResolvedValue({
       id: 'task_1',
+      title: 'Prepare release notes',
+      description: 'Summarize changes',
+      status: TaskStatus.PENDING,
+      assignedUserId: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      assignedUser: null,
     });
+
+    await expect(tasksService.remove('admin_1', 'task_1')).resolves.toEqual(
+      expect.objectContaining({
+        id: 'task_1',
+      }),
+    );
 
     expect(prismaService.task.delete).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -354,6 +397,7 @@ describe('TasksService', () => {
         actionType: AuditActionType.TASK_DELETED,
         targetEntityId: 'task_1',
       }),
+      expect.anything(),
     );
   });
 });

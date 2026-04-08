@@ -25,6 +25,9 @@ const taskSelect = {
 } satisfies Prisma.TaskSelect;
 
 type TaskRecord = Prisma.TaskGetPayload<{ select: typeof taskSelect }>;
+type TaskWriter =
+  | Pick<PrismaService, 'task' | 'user'>
+  | Prisma.TransactionClient;
 
 @Injectable()
 export class TasksService {
@@ -35,37 +38,45 @@ export class TasksService {
 
   // === create task ===
   async create(actorUserId: string, createTaskDto: CreateTaskDto) {
-    // === validate assigned user before create ===
-    await this.ensureAssignedUserExists(createTaskDto.assignedUserId);
+    return this.prismaService.$transaction(async (tx) => {
+      // === validate assigned user before create ===
+      await this.ensureAssignedUserExists(tx, createTaskDto.assignedUserId);
 
-    const createdTask = await this.prismaService.task.create({
-      data: {
-        title: createTaskDto.title,
-        description: createTaskDto.description,
-        status: createTaskDto.status ?? TaskStatus.PENDING,
-        assignedUserId: createTaskDto.assignedUserId ?? null,
-      },
-      select: taskSelect,
-    });
-
-    // === create audit logs for task creation and assignment ===
-    await this.auditLogsService.createTaskLog({
-      actorUserId,
-      actionType: AuditActionType.TASK_CREATED,
-      targetEntityId: createdTask.id,
-      summary: `Task "${createdTask.title}" created`,
-    });
-
-    if (createdTask.assignedUserId) {
-      await this.auditLogsService.createTaskLog({
-        actorUserId,
-        actionType: AuditActionType.TASK_ASSIGNED,
-        targetEntityId: createdTask.id,
-        summary: `Task "${createdTask.title}" assigned to user "${createdTask.assignedUserId}"`,
+      const createdTask = await tx.task.create({
+        data: {
+          title: createTaskDto.title,
+          description: createTaskDto.description,
+          status: createTaskDto.status ?? TaskStatus.PENDING,
+          assignedUserId: createTaskDto.assignedUserId ?? null,
+        },
+        select: taskSelect,
       });
-    }
 
-    return createdTask;
+      // === create audit logs for task creation and assignment ===
+      await this.auditLogsService.createTaskLog(
+        {
+          actorUserId,
+          actionType: AuditActionType.TASK_CREATED,
+          targetEntityId: createdTask.id,
+          summary: `Task "${createdTask.title}" created`,
+        },
+        tx,
+      );
+
+      if (createdTask.assignedUserId) {
+        await this.auditLogsService.createTaskLog(
+          {
+            actorUserId,
+            actionType: AuditActionType.TASK_ASSIGNED,
+            targetEntityId: createdTask.id,
+            summary: `Task "${createdTask.title}" assigned to user "${createdTask.assignedUserId}"`,
+          },
+          tx,
+        );
+      }
+
+      return createdTask;
+    });
   }
 
   // === get all tasks ===
@@ -118,23 +129,25 @@ export class TasksService {
 
   // === update task ===
   async update(actorUserId: string, id: string, updateTaskDto: UpdateTaskDto) {
-    const existingTask = await this.findOne(id);
-    await this.ensureAssignedUserExists(updateTaskDto.assignedUserId);
+    return this.prismaService.$transaction(async (tx) => {
+      const existingTask = await this.findOne(id);
+      await this.ensureAssignedUserExists(tx, updateTaskDto.assignedUserId);
 
-    const updatedTask = await this.prismaService.task.update({
-      where: { id },
-      data: {
-        title: updateTaskDto.title,
-        description: updateTaskDto.description,
-        status: updateTaskDto.status,
-        assignedUserId: updateTaskDto.assignedUserId,
-      },
-      select: taskSelect,
+      const updatedTask = await tx.task.update({
+        where: { id },
+        data: {
+          title: updateTaskDto.title,
+          description: updateTaskDto.description,
+          status: updateTaskDto.status,
+          assignedUserId: updateTaskDto.assignedUserId,
+        },
+        select: taskSelect,
+      });
+
+      await this.logAdminTaskUpdate(actorUserId, existingTask, updatedTask, tx);
+
+      return updatedTask;
     });
-
-    await this.logAdminTaskUpdate(actorUserId, existingTask, updatedTask);
-
-    return updatedTask;
   }
 
   // === update my task status ===
@@ -143,53 +156,66 @@ export class TasksService {
     id: string,
     updateTaskStatusDto: UpdateTaskStatusDto,
   ) {
-    // === validate task ownership before status update ===
-    const existingTask = await this.findAssignedTaskById(actorUserId, id);
+    return this.prismaService.$transaction(async (tx) => {
+      // === validate task ownership before status update ===
+      const existingTask = await this.findAssignedTaskById(actorUserId, id);
 
-    const updatedTask = await this.prismaService.task.update({
-      where: { id },
-      data: {
-        status: updateTaskStatusDto.status,
-      },
-      select: taskSelect,
+      const updatedTask = await tx.task.update({
+        where: { id },
+        data: {
+          status: updateTaskStatusDto.status,
+        },
+        select: taskSelect,
+      });
+
+      await this.auditLogsService.createTaskLog(
+        {
+          actorUserId,
+          actionType: AuditActionType.TASK_STATUS_CHANGED,
+          targetEntityId: updatedTask.id,
+          summary: `Task "${updatedTask.title}" status changed from "${existingTask.status}" to "${updatedTask.status}"`,
+        },
+        tx,
+      );
+
+      return updatedTask;
     });
-
-    await this.auditLogsService.createTaskLog({
-      actorUserId,
-      actionType: AuditActionType.TASK_STATUS_CHANGED,
-      targetEntityId: updatedTask.id,
-      summary: `Task "${updatedTask.title}" status changed from "${existingTask.status}" to "${updatedTask.status}"`,
-    });
-
-    return updatedTask;
   }
 
   // === delete task ===
   async remove(actorUserId: string, id: string) {
-    await this.findOne(id);
+    return this.prismaService.$transaction(async (tx) => {
+      await this.findOne(id);
 
-    const deletedTask = await this.prismaService.task.delete({
-      where: { id },
-      select: taskSelect,
+      const deletedTask = await tx.task.delete({
+        where: { id },
+        select: taskSelect,
+      });
+
+      await this.auditLogsService.createTaskLog(
+        {
+          actorUserId,
+          actionType: AuditActionType.TASK_DELETED,
+          targetEntityId: deletedTask.id,
+          summary: `Task "${deletedTask.title}" deleted`,
+        },
+        tx,
+      );
+
+      return deletedTask;
     });
-
-    await this.auditLogsService.createTaskLog({
-      actorUserId,
-      actionType: AuditActionType.TASK_DELETED,
-      targetEntityId: deletedTask.id,
-      summary: `Task "${deletedTask.title}" deleted`,
-    });
-
-    return deletedTask;
   }
 
   // === validate assigned user ===
-  private async ensureAssignedUserExists(assignedUserId?: string | null) {
+  private async ensureAssignedUserExists(
+    writer: TaskWriter,
+    assignedUserId?: string | null,
+  ) {
     if (!assignedUserId) {
       return;
     }
 
-    const assignedUser = await this.prismaService.user.findUnique({
+    const assignedUser = await writer.user.findUnique({
       where: { id: assignedUserId },
       select: { id: true },
     });
@@ -205,36 +231,46 @@ export class TasksService {
     actorUserId: string,
     existingTask: TaskRecord,
     updatedTask: TaskRecord,
+    writer: Prisma.TransactionClient,
   ) {
     // === create audit logs for admin task updates ===
     if (
       existingTask.title !== updatedTask.title ||
       existingTask.description !== updatedTask.description
     ) {
-      await this.auditLogsService.createTaskLog({
-        actorUserId,
-        actionType: AuditActionType.TASK_UPDATED,
-        targetEntityId: updatedTask.id,
-        summary: `Task "${updatedTask.title}" details updated`,
-      });
+      await this.auditLogsService.createTaskLog(
+        {
+          actorUserId,
+          actionType: AuditActionType.TASK_UPDATED,
+          targetEntityId: updatedTask.id,
+          summary: `Task "${updatedTask.title}" details updated`,
+        },
+        writer,
+      );
     }
 
     if (existingTask.assignedUserId !== updatedTask.assignedUserId) {
-      await this.auditLogsService.createTaskLog({
-        actorUserId,
-        actionType: AuditActionType.TASK_ASSIGNED,
-        targetEntityId: updatedTask.id,
-        summary: `Task "${updatedTask.title}" assignment changed`,
-      });
+      await this.auditLogsService.createTaskLog(
+        {
+          actorUserId,
+          actionType: AuditActionType.TASK_ASSIGNED,
+          targetEntityId: updatedTask.id,
+          summary: `Task "${updatedTask.title}" assignment changed`,
+        },
+        writer,
+      );
     }
 
     if (existingTask.status !== updatedTask.status) {
-      await this.auditLogsService.createTaskLog({
-        actorUserId,
-        actionType: AuditActionType.TASK_STATUS_CHANGED,
-        targetEntityId: updatedTask.id,
-        summary: `Task "${updatedTask.title}" status changed from "${existingTask.status}" to "${updatedTask.status}"`,
-      });
+      await this.auditLogsService.createTaskLog(
+        {
+          actorUserId,
+          actionType: AuditActionType.TASK_STATUS_CHANGED,
+          targetEntityId: updatedTask.id,
+          summary: `Task "${updatedTask.title}" status changed from "${existingTask.status}" to "${updatedTask.status}"`,
+        },
+        writer,
+      );
     }
   }
 }

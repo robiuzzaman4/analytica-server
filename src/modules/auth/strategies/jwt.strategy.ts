@@ -1,9 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import type { Request } from 'express';
 import { AuthenticatedUser } from '../../../common/auth/interfaces/authenticated-user.interface';
+import { PrismaService } from '../../../common/prisma/prisma.service';
 import { JwtPayload } from '../interfaces/jwt-payload.interface';
 
 function extractJwtFromCookie(request: Request): string | null {
@@ -29,7 +30,10 @@ function extractJwtFromCookie(request: Request): string | null {
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor(configService: ConfigService) {
+  constructor(
+    configService: ConfigService,
+    private readonly prismaService: PrismaService,
+  ) {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
         // === support bearer token and cookie auth ===
@@ -42,12 +46,26 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   // === map jwt payload to request user ===
-  validate(payload: JwtPayload): AuthenticatedUser {
+  async validate(payload: JwtPayload): Promise<AuthenticatedUser> {
+    const user = await this.prismaService.user.findUnique({
+      where: { id: payload.sub },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+      },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('Invalid or expired token');
+    }
+
     return {
-      id: payload.sub,
-      name: payload.name,
-      email: payload.email,
-      role: payload.role,
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
     };
   }
 }

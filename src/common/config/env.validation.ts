@@ -7,6 +7,9 @@ const requiredKeys = [
   'DEMO_USER_NAME',
   'DEMO_USER_EMAIL',
   'DEMO_USER_PASSWORD',
+  'DEMO_USER_TWO_NAME',
+  'DEMO_USER_TWO_EMAIL',
+  'DEMO_USER_TWO_PASSWORD',
 ] as const;
 
 type AppEnvironment = {
@@ -19,6 +22,9 @@ type AppEnvironment = {
   DEMO_USER_NAME: string;
   DEMO_USER_EMAIL: string;
   DEMO_USER_PASSWORD: string;
+  DEMO_USER_TWO_NAME: string;
+  DEMO_USER_TWO_EMAIL: string;
+  DEMO_USER_TWO_PASSWORD: string;
 };
 
 export function validateEnvironment(
@@ -48,5 +54,8 @@ export function validateEnvironment(
     DEMO_USER_NAME: String(config.DEMO_USER_NAME),
     DEMO_USER_EMAIL: String(config.DEMO_USER_EMAIL),
     DEMO_USER_PASSWORD: String(config.DEMO_USER_PASSWORD),
+    DEMO_USER_TWO_NAME: String(config.DEMO_USER_TWO_NAME),
+    DEMO_USER_TWO_EMAIL: String(config.DEMO_USER_TWO_EMAIL),
+    DEMO_USER_TWO_PASSWORD: String(config.DEMO_USER_TWO_PASSWORD),
   };
 }

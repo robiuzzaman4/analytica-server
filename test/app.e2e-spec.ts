@@ -1,7 +1,7 @@
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuditActionType, Role, TaskStatus } from '@prisma/client';
-import { hash } from 'bcrypt';
+import { hash } from 'bcryptjs';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from '../src/app.module';
@@ -435,6 +435,9 @@ describe('App E2E', () => {
     process.env.DEMO_USER_NAME ??= 'Normal User';
     process.env.DEMO_USER_EMAIL ??= 'user@analytica.local';
     process.env.DEMO_USER_PASSWORD ??= 'User123!';
+    process.env.DEMO_USER_TWO_NAME ??= 'Other User';
+    process.env.DEMO_USER_TWO_EMAIL ??= 'other@analytica.local';
+    process.env.DEMO_USER_TWO_PASSWORD ??= 'Other123!';
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],

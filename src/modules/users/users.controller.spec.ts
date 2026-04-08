@@ -1,5 +1,6 @@
 import { Role } from '@prisma/client';
 import { ROLES_KEY } from '../../common/auth/decorators/roles.decorator';
+import { UsersQueryDto } from './dto/users-query.dto';
 import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
 
@@ -26,15 +27,17 @@ describe('UsersController', () => {
   });
 
   it('returns all users', async () => {
+    const query: UsersQueryDto = { role: Role.USER };
+
     usersService.findAll.mockResolvedValue([{ id: 'user_1' }]);
 
-    await expect(usersController.findAll()).resolves.toEqual({
+    await expect(usersController.findAll(query)).resolves.toEqual({
       statusCode: 200,
       success: true,
       message: 'Get All Users Successfully.',
       data: [{ id: 'user_1' }],
     });
 
-    expect(usersService.findAll).toHaveBeenCalled();
+    expect(usersService.findAll).toHaveBeenCalledWith(query);
   });
 });
