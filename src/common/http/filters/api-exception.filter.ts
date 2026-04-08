@@ -32,6 +32,10 @@ export class ApiExceptionFilter implements ExceptionFilter {
   // === resolve error message ===
   private getMessage(exception: unknown) {
     if (!(exception instanceof HttpException)) {
+      if (exception instanceof Error) {
+        return exception.message || 'Internal server error';
+      }
+
       return 'Internal server error';
     }
 

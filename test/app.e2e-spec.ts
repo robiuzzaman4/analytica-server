@@ -1,3 +1,7 @@
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuditActionType, Role, TaskStatus } from '@prisma/client';
@@ -83,6 +87,7 @@ function createPrismaMock() {
   let auditLogs: TestAuditLogRecord[] = [];
   let taskSequence = 1;
   let auditSequence = 1;
+  const prismaMock: any = {};
 
   const mapUser = (user: TestUserRecord) => ({
     id: user.id,
@@ -139,7 +144,11 @@ function createPrismaMock() {
     };
   };
 
-  return {
+  Object.assign(prismaMock, {
+    $transaction: jest.fn(
+      async (callback: (tx: typeof prismaMock) => Promise<unknown>) =>
+        callback(prismaMock),
+    ),
     user: {
       findUnique: jest.fn(
         ({
@@ -418,7 +427,9 @@ function createPrismaMock() {
       taskSequence = 3;
       auditSequence = 2;
     },
-  };
+  });
+
+  return prismaMock;
 }
 
 describe('App E2E', () => {
@@ -593,6 +604,64 @@ describe('App E2E', () => {
         const body = getResponseBody<TaskDto>(response);
         expect(body.data?.id).toBe(taskId);
       });
+  });
+
+  it('creates audit logs when an admin creates a task', async () => {
+    const accessToken = await login('admin@analytica.local', 'Admin123!');
+
+    const created = await request(app.getHttpServer())
+      .post('/api/v1/tasks')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({
+        title: 'Audit trail task',
+        description: 'Verify task creation logs',
+        assignedUserId: 'user_1',
+      })
+      .expect(201);
+
+    const taskId = getResponseBody<TaskDto>(created).data?.id;
+
+    expect(taskId).toBeDefined();
+
+    const createdLogResponse = await request(app.getHttpServer())
+      .get('/api/v1/audit-logs')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .query({
+        actionType: AuditActionType.TASK_CREATED,
+        targetEntityId: taskId,
+      })
+      .expect(200);
+
+    expect(getResponseBody<AuditLogDto[]>(createdLogResponse).data).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          actorUserId: 'admin_1',
+          actionType: AuditActionType.TASK_CREATED,
+          targetEntity: 'TASK',
+          targetEntityId: taskId,
+        }),
+      ]),
+    );
+
+    const assignedLogResponse = await request(app.getHttpServer())
+      .get('/api/v1/audit-logs')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .query({
+        actionType: AuditActionType.TASK_ASSIGNED,
+        targetEntityId: taskId,
+      })
+      .expect(200);
+
+    expect(getResponseBody<AuditLogDto[]>(assignedLogResponse).data).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          actorUserId: 'admin_1',
+          actionType: AuditActionType.TASK_ASSIGNED,
+          targetEntity: 'TASK',
+          targetEntityId: taskId,
+        }),
+      ]),
+    );
   });
 
   it('prevents a normal user from accessing admin task listing', async () => {

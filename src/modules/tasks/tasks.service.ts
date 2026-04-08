@@ -69,7 +69,7 @@ export class TasksService {
             actorUserId,
             actionType: AuditActionType.TASK_ASSIGNED,
             targetEntityId: createdTask.id,
-            summary: `Task "${createdTask.title}" assigned to user "${createdTask.assignedUserId}"`,
+            summary: `Task "${createdTask.title}" assigned to user "${createdTask.assignedUser?.name}"`,
           },
           tx,
         );
