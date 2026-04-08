@@ -323,7 +323,6 @@ prisma/
 
 ## Notes
 
-- Passwords are hashed with `bcrypt`
 - Audit logs store actor, action type, target, summary, and timestamp
 - Audit log list responses are filtered and paginated, and task list responses are paginated
 - Demo users are not recreated on every startup; only missing users are inserted
