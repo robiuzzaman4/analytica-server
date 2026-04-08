@@ -172,6 +172,14 @@ function createPrismaMock() {
       ),
     },
     task: {
+      count: jest.fn(
+        ({ where }: { where?: { assignedUserId?: string } } = {}) =>
+          [...tasks].filter((task) =>
+            where?.assignedUserId
+              ? task.assignedUserId === where.assignedUserId
+              : true,
+          ).length,
+      ),
       create: jest.fn(
         ({
           data,
@@ -291,6 +299,30 @@ function createPrismaMock() {
       ),
     },
     auditLog: {
+      count: jest.fn(
+        ({
+          where,
+        }: {
+          where?: {
+            actionType?: AuditActionType;
+            targetEntityId?: string;
+          };
+        } = {}) =>
+          [...auditLogs].filter((auditLog) => {
+            if (where?.actionType && auditLog.actionType !== where.actionType) {
+              return false;
+            }
+
+            if (
+              where?.targetEntityId &&
+              auditLog.targetEntityId !== where.targetEntityId
+            ) {
+              return false;
+            }
+
+            return true;
+          }).length,
+      ),
       create: jest.fn(
         ({
           data,
@@ -632,7 +664,9 @@ describe('App E2E', () => {
       })
       .expect(200);
 
-    expect(getResponseBody<AuditLogDto[]>(createdLogResponse).data).toEqual(
+    expect(
+      getResponseBody<{ items: AuditLogDto[] }>(createdLogResponse).data?.items,
+    ).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
           actorUserId: 'admin_1',
@@ -652,7 +686,10 @@ describe('App E2E', () => {
       })
       .expect(200);
 
-    expect(getResponseBody<AuditLogDto[]>(assignedLogResponse).data).toEqual(
+    expect(
+      getResponseBody<{ items: AuditLogDto[] }>(assignedLogResponse).data
+        ?.items,
+    ).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
           actorUserId: 'admin_1',
@@ -687,11 +724,13 @@ describe('App E2E', () => {
       .set('Authorization', `Bearer ${accessToken}`)
       .expect(200);
 
-    const body = getResponseBody<TaskDto[]>(response);
+    const body = getResponseBody<{ items: TaskDto[]; pagination: unknown }>(
+      response,
+    );
 
-    expect(body.data).toHaveLength(1);
-    expect(body.data?.[0]?.id).toBe('task_seed_user_1');
-    expect(body.data?.[0]?.assignedUserId).toBe('user_1');
+    expect(body.data?.items).toHaveLength(1);
+    expect(body.data?.items?.[0]?.id).toBe('task_seed_user_1');
+    expect(body.data?.items?.[0]?.assignedUserId).toBe('user_1');
   });
 
   it('lets a user update the status of an assigned task', async () => {
@@ -720,7 +759,8 @@ describe('App E2E', () => {
       .expect(200);
 
     expect(
-      getResponseBody<AuditLogDto[]>(auditResponse).data?.[0]?.actionType,
+      getResponseBody<{ items: AuditLogDto[] }>(auditResponse).data?.items?.[0]
+        ?.actionType,
     ).toBe(AuditActionType.TASK_STATUS_CHANGED);
   });
 
@@ -760,12 +800,14 @@ describe('App E2E', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
 
-    const body = getResponseBody<AuditLogDto[]>(response);
+    const body = getResponseBody<{ items: AuditLogDto[]; pagination: unknown }>(
+      response,
+    );
 
     expect(body.success).toBe(true);
-    expect(body.data?.length).toBeGreaterThan(0);
-    expect(body.data?.[0]?.actorUserId).toEqual(expect.any(String));
-    expect(body.data?.[0]?.actionType).toEqual(expect.any(String));
-    expect(body.data?.[0]?.targetEntity).toBe('TASK');
+    expect(body.data?.items?.length).toBeGreaterThan(0);
+    expect(body.data?.items?.[0]?.actorUserId).toEqual(expect.any(String));
+    expect(body.data?.items?.[0]?.actionType).toEqual(expect.any(String));
+    expect(body.data?.items?.[0]?.targetEntity).toBe('TASK');
   });
 });
