@@ -1,6 +1,8 @@
-# Analytica Management Backend
+# Analytica Server
 
 NestJS backend for a small task management system with JWT auth, role-based access control, task management, and audit logging.
+
+Full API reference: [API_DOCUMENTATION.md](./API_DOCUMENTATION.md)
 
 ## Features
 
@@ -12,6 +14,8 @@ NestJS backend for a small task management system with JWT auth, role-based acce
 - User-only task status updates for owned tasks
 - Admin-only user listing
 - Admin-only audit log listing
+- Audit log filtering by `actionType`
+- Offset-based pagination on `GET /tasks`, `GET /tasks/me`, and `GET /audit-logs`
 - Prisma ORM with PostgreSQL
 - Automatic demo-user seeding on server startup if users do not exist
 - CORS enabled for frontend integration
@@ -24,6 +28,7 @@ NestJS backend for a small task management system with JWT auth, role-based acce
 - Prisma
 - JWT auth
 - Bcrypt
+- Jest
 
 ## Implemented API
 
@@ -45,10 +50,12 @@ For error responses, `success` is `false` and `data` is `null`.
 - `POST /auth/login`
 - `POST /auth/logout`
 - `GET /auth/me`
-  Notes:
-  - login returns the JWT in the response body
-  - login also sets an `accessToken` httpOnly cookie for browser clients
-  - protected routes accept either `Authorization: Bearer <token>` or the `accessToken` cookie
+
+Notes:
+
+- login returns the JWT in the response body
+- login also sets an `accessToken` httpOnly cookie for browser clients
+- protected routes accept either `Authorization: Bearer <token>` or the `accessToken` cookie
 
 ### Health
 
@@ -61,7 +68,7 @@ For error responses, `success` is `false` and `data` is `null`.
 - `GET /tasks/:id` - admin only
 - `PATCH /tasks/:id` - admin only
 - `DELETE /tasks/:id` - admin only
-- `GET /tasks/me` - user only
+- `GET /tasks/me` - user only, paginated
 - `GET /tasks/me/:id` - user only
 - `PATCH /tasks/:id/status` - user only
 
@@ -75,6 +82,13 @@ For error responses, `success` is `false` and `data` is `null`.
   Optional query params:
   - `actionType`
   - `targetEntityId`
+  - `page`
+  - `limit`
+
+Pagination defaults:
+
+- `page=1`
+- `limit=20`
 
 ## Roles
 
@@ -169,6 +183,11 @@ pnpm exec prisma migrate dev
 pnpm run start:dev
 ```
 
+Verified working:
+
+- `pnpm start:dev`
+- `pnpm docker:up`
+
 The server will:
 
 - start on the configured `PORT`
@@ -178,13 +197,15 @@ The server will:
 ### Option 2: Docker Compose
 
 ```bash
-docker compose up --build
+pnpm run docker:up
 ```
 
 This starts:
 
 - PostgreSQL on `localhost:5432`
 - the NestJS app on `localhost:5000`
+
+You can also run the same flow with `docker compose up --build` directly if you prefer.
 
 The compose setup now:
 
@@ -271,6 +292,8 @@ Current verified status:
 
 - `pnpm test` passes
 - `pnpm run test:e2e` passes
+- `pnpm start:dev` works
+- `pnpm docker:up` works
 
 Run lint:
 
@@ -302,4 +325,5 @@ prisma/
 
 - Passwords are hashed with `bcrypt`
 - Audit logs store actor, action type, target, summary, and timestamp
+- Audit log list responses are filtered and paginated, and task list responses are paginated
 - Demo users are not recreated on every startup; only missing users are inserted
